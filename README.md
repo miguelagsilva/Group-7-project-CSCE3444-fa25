@@ -1,5 +1,5 @@
-# Lucky 7 - KidCode
-KidCode is a web application that enables children to learn how to program in Python interactively.
+# Lucky 7 - LeetCode For Kids
+LeetCode for Kids is a web application that enables children to learn how to program in Python interactively.
 
 # Team Members
 - Aminat Usman:Team Coordinator, Frontend Developer
