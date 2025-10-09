@@ -1,35 +1,101 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { Header } from "./components/Header";
+import { HeroSection } from "./components/HeroSection";
+import { FeaturesSection } from "./components/FeaturesSection";
+import { CoursesSection } from "./components/CoursesSection";
+import { TestimonialsSection } from "./components/TestimonialsSection";
+import { Footer } from "./components/Footer";
+import { ModulesPage } from "./components/ModulesPage";
+import { ModuleDetailPage } from "./components/ModuleDetailPage";
+import { ProgressPage } from "./components/ProgressPage";
+import { PracticePage } from "./components/PracticePage";
+import { ChallengePage } from "./components/ChallengePage";
+import { QuizPage } from "./components/QuizPage";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [currentPage, setCurrentPage] = useState<'landing' | 'modules' | 'module-detail' | 'progress' | 'practice' | 'challenge' | 'quiz'>('landing');
+
+  const navigateToModules = () => {
+    setCurrentPage('modules');
+  };
+
+  const navigateToLanding = () => {
+    setCurrentPage('landing');
+  };
+
+  const navigateToModuleDetail = () => {
+    setCurrentPage('module-detail');
+  };
+
+  const navigateToProgress = () => {
+    setCurrentPage('progress');
+  };
+
+  const navigateToPractice = () => {
+    setCurrentPage('practice');
+  };
+
+  const navigateToChallenge = () => {
+    setCurrentPage('challenge');
+  };
+
+  const navigateToQuiz = () => {
+    setCurrentPage('quiz');
+  };
+
+  const navigateBackToModules = () => {
+    setCurrentPage('modules');
+  };
+
+  if (currentPage === 'quiz') {
+    return <QuizPage onBack={navigateToModuleDetail} onProgressClick={navigateToProgress} />;
+  }
+
+  if (currentPage === 'challenge') {
+    return <ChallengePage onBack={navigateToModuleDetail} onProgressClick={navigateToProgress} />;
+  }
+
+  if (currentPage === 'practice') {
+    return <PracticePage 
+      onBack={navigateToModuleDetail} 
+      onProgressClick={navigateToProgress}
+      onLearnClick={navigateToModuleDetail}
+      onChallengeClick={navigateToChallenge}
+      onQuizClick={navigateToQuiz}
+    />;
+  }
+
+  if (currentPage === 'progress') {
+    return <ProgressPage onBack={navigateBackToModules} />;
+  }
+
+  if (currentPage === 'module-detail') {
+    return <ModuleDetailPage onBack={navigateBackToModules} onProgressClick={navigateToProgress} onPracticeClick={navigateToPractice} onChallengeClick={navigateToChallenge} onQuizClick={navigateToQuiz} />;
+  }
+
+  if (currentPage === 'modules') {
+    return <ModulesPage 
+      onBack={navigateToLanding} 
+      onModuleClick={navigateToModuleDetail} 
+      onProgressClick={navigateToProgress}
+      onPracticeClick={navigateToPractice}
+      onChallengeClick={navigateToChallenge}
+      onQuizClick={navigateToQuiz}
+    />;
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="min-h-screen bg-white">
+      <Header 
+        onNavigateToModules={navigateToModules} 
+        onNavigateToProgress={navigateToProgress}
+        onNavigateToHome={navigateToLanding}
+      />
+      <HeroSection onNavigateToModules={navigateToModules} />
+      <FeaturesSection />
+      <CoursesSection onNavigateToModules={navigateToModules} />
+      <TestimonialsSection />
+      <Footer />
+    </div>
+  );
 }
-
-export default App
