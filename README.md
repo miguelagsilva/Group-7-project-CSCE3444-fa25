@@ -44,3 +44,5 @@ https://trello.com/b/BnjQRkx7/group-7-project-csce3444-fa25
     ```bash
      npm run dev
      ```
+     
+##Testing
