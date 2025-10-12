@@ -2,31 +2,50 @@
   {
     "id": 1,
     "name": "Introduction to Python",
-    "description": "Start your coding adventure by learning the basics of Python.",
+    "description": "Start your coding adventure by learning the basics of Python and writing your first program.",
     "status": "COMPLETED"
   },
   {
     "id": 2,
     "name": "Variables & Data Types",
-    "description": "Learn how to store and use different types of information.",
+    "description": "Learn how to store, manage, and use different types of information like text and numbers.",
     "status": "COMPLETED"
   },
   {
     "id": 3,
     "name": "Control Flow (If/Else)",
-    "description": "Make decisions in your code to create smarter programs.",
+    "description": "Make decisions in your code to create smarter, more responsive programs.",
     "status": "IN_PROGRESS"
   },
   {
     "id": 4,
     "name": "Loops (For/While)",
-    "description": "Repeat actions and work with collections of data efficiently.",
+    "description": "Master the art of repetition to perform tasks efficiently and work with collections of data.",
     "status": "NOT_STARTED"
   },
   {
     "id": 5,
     "name": "Functions",
-    "description": "Package your code into reusable blocks.",
+    "description": "Organize your code into reusable blocks to make your programs cleaner and more powerful.",
+    "status": "LOCKED"
+  },
+  {
+    "id": 6,
+    "name": "Lists & Dictionaries",
+    "description": "Learn about Python's most powerful tools for storing and organizing collections of data.",
+    "status": "LOCKED"
+  },
+  {
+    "id": 7,
+    "name": "Introduction to Algorithms",
+    "description": "Start thinking like a programmer by solving common problems with simple algorithms.",
+    "status": "LOCKED"
+  },
+  {
+    "id": 8,
+    "name": "Final Project: Build a Game",
+    "description": "Combine everything you've learned to build a fun, interactive text-based adventure game.",
     "status": "LOCKED"
   }
 ]
+

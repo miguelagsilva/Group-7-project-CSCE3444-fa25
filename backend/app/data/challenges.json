@@ -1,20 +1,39 @@
 [
   {
     "module_id": 1,
-    "title": "Greeting Challenge",
-    "description": "Print three different greetings on three separate lines.",
-    "expected_output": "Hello!\nWelcome!\nHi there!"
+    "title": "Introduce Yourself",
+    "description": "Print your name on the first line and your favorite hobby on the second line.",
+    "expected_output": "Alex\nPlaying video games"
   },
   {
     "module_id": 2,
-    "title": "Player Stats",
-    "description": "Create two variables: `score` with a value of 100, and `lives` with a value of 3. Print the score on the first line and the lives on the second line.",
-    "expected_output": "100\n3"
+    "title": "Game Character Stats",
+    "description": "Create three variables: `character_name` with the value \"Wizard\", `mana` with a value of 200, and `has_hat` with a value of True. Print each variable on a new line.",
+    "expected_output": "Wizard\n200\nTrue"
   },
   {
     "module_id": 3,
-    "title": "Number Checker",
-    "description": "Given a variable `number = 15`, write code to check if it's greater than 10. If it is, print 'The number is big'. Otherwise, print 'The number is small'.",
-    "expected_output": "The number is big"
+    "title": "Grade Calculator",
+    "description": "Given a variable `score = 85`, print 'A' if the score is 90 or above, 'B' if it's 80 or above, and 'C' otherwise.",
+    "expected_output": "B"
+  },
+  {
+    "module_id": 4,
+    "title": "Find the Even Numbers",
+    "description": "Write a `for` loop that prints all the even numbers from 2 to 10 (inclusive), each on a new line.",
+    "expected_output": "2\n4\n6\n8\n10"
+  },
+  {
+    "module_id": 5,
+    "title": "Area of a Rectangle",
+    "description": "Write a function `calculate_area` that takes `width` and `height` as arguments and prints the area. Call it with a width of 10 and a height of 5.",
+    "expected_output": "50"
+  },
+  {
+    "module_id": 6,
+    "title": "Accessing Inventory",
+    "description": "You are given a list `inventory = ['compass', 'map', 'rope']`. Print the second item in the list.",
+    "expected_output": "map"
   }
 ]
+

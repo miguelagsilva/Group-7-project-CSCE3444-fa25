@@ -1,37 +1,123 @@
 [
   {
     "module_id": 1,
-    "quiz_id": 101,
-    "question": "What command is used to display text on the screen in Python?",
-    "options": ["display()", "show()", "print()", "text()"],
-    "answer": "print()"
+    "quiz_id": 1,
+    "title": "Python Basics Quiz",
+    "questions": [
+      {
+        "question_id": 101,
+        "question": "What command is used to display text on the screen in Python?",
+        "options": ["display()", "show()", "print()", "text()"],
+        "answer": "print()"
+      },
+      {
+        "question_id": 102,
+        "question": "What is a line of text starting with a '#' symbol called?",
+        "options": ["A command", "A variable", "A function", "A comment"],
+        "answer": "A comment"
+      }
+    ]
   },
   {
     "module_id": 2,
-    "quiz_id": 201,
-    "question": "What is the correct way to create a variable in Python?",
-    "options": ["var name = 'Alice'", "name = 'Alice'", "string name = 'Alice'", "let name = 'Alice'"],
-    "answer": "name = 'Alice'"
-  },
-  {
-    "module_id": 2,
-    "quiz_id": 202,
-    "question": "A variable that holds a whole number like 10 is called an...",
-    "options": ["String", "Float", "Integer", "Boolean"],
-    "answer": "Integer"
+    "quiz_id": 2,
+    "title": "Variables & Data Types Quiz",
+    "questions": [
+      {
+        "question_id": 201,
+        "question": "What is the correct way to create a variable in Python?",
+        "options": ["var name = 'Alice'", "name = 'Alice'", "string name = 'Alice'", "let name = 'Alice'"],
+        "answer": "name = 'Alice'"
+      },
+      {
+        "question_id": 202,
+        "question": "A variable holding text like \"hello\" is what data type?",
+        "options": ["String", "Float", "Integer", "Boolean"],
+        "answer": "String"
+      },
+      {
+        "question_id": 203,
+        "question": "Which of these is a valid variable name?",
+        "options": ["1st_place", "player score", "player_score", "$money"],
+        "answer": "player_score"
+      }
+    ]
   },
   {
     "module_id": 3,
-    "quiz_id": 301,
-    "question": "Which of these is a comparison operator?",
-    "options": ["=", "==", "+", "if"],
-    "answer": "=="
+    "quiz_id": 3,
+    "title": "Control Flow Quiz",
+    "questions": [
+      {
+        "question_id": 301,
+        "question": "Which keyword is used to handle the case when an `if` condition is false?",
+        "options": ["maybe", "otherwise", "else", "next"],
+        "answer": "else"
+      },
+      {
+        "question_id": 302,
+        "question": "Which symbol means 'equal to' when checking a condition?",
+        "options": ["=", "==", "!=", "=>"],
+        "answer": "=="
+      }
+    ]
   },
   {
-    "module_id": 3,
-    "quiz_id": 302,
-    "question": "What will be printed by: `if False: print('A') else: print('B')`?",
-    "options": ["A", "B", "Nothing", "An error"],
-    "answer": "B"
+    "module_id": 4,
+    "quiz_id": 4,
+    "title": "Loops Quiz",
+    "questions": [
+      {
+        "question_id": 401,
+        "question": "Which type of loop is best for repeating a known number of times?",
+        "options": ["while loop", "if loop", "repeat loop", "for loop"],
+        "answer": "for loop"
+      },
+      {
+        "question_id": 402,
+        "question": "What does `range(3)` produce?",
+        "options": ["1, 2, 3", "0, 1, 2", "0, 1, 2, 3", "Just 3"],
+        "answer": "0, 1, 2"
+      }
+    ]
+  },
+  {
+    "module_id": 5,
+    "quiz_id": 5,
+    "title": "Functions Quiz",
+    "questions": [
+      {
+        "question_id": 501,
+        "question": "What keyword do you use to define a new function?",
+        "options": ["function", "def", "create", "fun"],
+        "answer": "def"
+      },
+      {
+        "question_id": 502,
+        "question": "What are the inputs to a function called?",
+        "options": ["parameters", "variables", "inputs", "arguments"],
+        "answer": "arguments"
+      }
+    ]
+  },
+  {
+    "module_id": 6,
+    "quiz_id": 6,
+    "title": "Data Structures Quiz",
+    "questions": [
+      {
+        "question_id": 601,
+        "question": "Which data structure is an ordered collection of items?",
+        "options": ["Dictionary", "Variable", "List", "Function"],
+        "answer": "List"
+      },
+      {
+        "question_id": 602,
+        "question": "How do you get the first item from a list called `items`?",
+        "options": ["items[1]", "items.first()", "items(0)", "items[0]"],
+        "answer": "items[0]"
+      }
+    ]
   }
 ]
+

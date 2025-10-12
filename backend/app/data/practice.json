@@ -2,19 +2,38 @@
   {
     "module_id": 1,
     "title": "Your First Program",
-    "instructions": "Help our friend Bot-Jay say hello! Write a line of code in the editor that prints the message 'Hello, Python!' to the screen.",
+    "instructions": "Help our friend Bot-Jay say hello! Write a line of code in the editor that prints the message 'Python is fun!' to the screen.",
     "starter_code": "# Write your code here!\n"
   },
   {
     "module_id": 2,
-    "title": "Store Your Name",
-    "instructions": "Create a variable called `player_name` and store your name in it. Then, print the variable to see your name in the output.",
-    "starter_code": "# Create your variable below\nplayer_name = \"\"\n# Print your variable\n"
+    "title": "Store Your Age",
+    "instructions": "Create a variable called `my_age` and store your age in it as a number. Then, print the variable to see it in the output.",
+    "starter_code": "# Create your variable below\nmy_age = 0\n\n# Print your variable\nprint(my_age)"
   },
   {
     "module_id": 3,
-    "title": "Rainy Day Advisor",
-    "instructions": "We have a variable `is_raining = True`. Write an if/else statement to print 'Bring an umbrella!' if it's raining, and 'Enjoy the sunshine!' otherwise.",
-    "starter_code": "is_raining = True\n\n# Write your if/else statement here\n"
+    "title": "Castle Entry",
+    "instructions": "We have a variable `is_knight = True`. Write an if/else statement to print 'Welcome to the castle!' if `is_knight` is true, and 'Only knights may enter!' otherwise.",
+    "starter_code": "is_knight = True\n\n# Write your if/else statement here\n"
+  },
+  {
+    "module_id": 4,
+    "title": "Countdown",
+    "instructions": "Write a `for` loop that prints the numbers 5, 4, 3, 2, and 1, each on a new line.",
+    "starter_code": "# Use the range() function to help you loop\n"
+  },
+  {
+    "module_id": 5,
+    "title": "Add Two Numbers",
+    "instructions": "Create a function called `add` that takes two numbers, `a` and `b`, as arguments. Inside the function, print their sum.",
+    "starter_code": "def add(a, b):\n  # Your code here\n  pass\n\n# Call your function to test it\nadd(5, 3)"
+  },
+  {
+    "module_id": 6,
+    "title": "Your Favorite Colors",
+    "instructions": "Create a list called `colors` that contains three of your favorite colors as strings. Then, print the entire list.",
+    "starter_code": "# Create your list here\ncolors = []\n\nprint(colors)"
   }
 ]
+
