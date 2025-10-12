@@ -1,0 +1,20 @@
+[
+  {
+    "module_id": 1,
+    "title": "Greeting Challenge",
+    "description": "Print three different greetings on three separate lines.",
+    "expected_output": "Hello!\nWelcome!\nHi there!"
+  },
+  {
+    "module_id": 2,
+    "title": "Player Stats",
+    "description": "Create two variables: `score` with a value of 100, and `lives` with a value of 3. Print the score on the first line and the lives on the second line.",
+    "expected_output": "100\n3"
+  },
+  {
+    "module_id": 3,
+    "title": "Number Checker",
+    "description": "Given a variable `number = 15`, write code to check if it's greater than 10. If it is, print 'The number is big'. Otherwise, print 'The number is small'.",
+    "expected_output": "The number is big"
+  }
+]

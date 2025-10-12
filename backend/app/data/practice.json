@@ -1,0 +1,20 @@
+[
+  {
+    "module_id": 1,
+    "title": "Your First Program",
+    "instructions": "Help our friend Bot-Jay say hello! Write a line of code in the editor that prints the message 'Hello, Python!' to the screen.",
+    "starter_code": "# Write your code here!\n"
+  },
+  {
+    "module_id": 2,
+    "title": "Store Your Name",
+    "instructions": "Create a variable called `player_name` and store your name in it. Then, print the variable to see your name in the output.",
+    "starter_code": "# Create your variable below\nplayer_name = \"\"\n# Print your variable\n"
+  },
+  {
+    "module_id": 3,
+    "title": "Rainy Day Advisor",
+    "instructions": "We have a variable `is_raining = True`. Write an if/else statement to print 'Bring an umbrella!' if it's raining, and 'Enjoy the sunshine!' otherwise.",
+    "starter_code": "is_raining = True\n\n# Write your if/else statement here\n"
+  }
+]

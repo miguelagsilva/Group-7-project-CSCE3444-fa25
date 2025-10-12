@@ -1,0 +1,47 @@
+[
+  {
+    "module_id": 1,
+    "title": "What is Python?",
+    "video_url": "https://www.youtube.com/embed/some_video_id_1",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Python is a popular, easy-to-learn programming language. It's like giving instructions to a computer in a language it can understand."
+      },
+      {
+        "type": "code",
+        "text": "print('Hello, World!')"
+      }
+    ]
+  },
+  {
+    "module_id": 2,
+    "title": "What is a Variable?",
+    "video_url": "https://www.youtube.com/embed/some_video_id_2",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Think of a variable like a special box where you can store things! Just like a box labeled 'toys', variables have names and can hold different kinds of information like text (Strings), whole numbers (Integers), and numbers with decimals (Floats)."
+      },
+      {
+        "type": "code",
+        "text": "# Creating variables is like labeling boxes!\nmy_name = \"Alex\"  # This is a String\nmy_age = 12       # This is an Integer\n"
+      }
+    ]
+  },
+  {
+    "module_id": 3,
+    "title": "Making Choices with If/Else",
+    "video_url": "https://www.youtube.com/embed/some_video_id_3",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Sometimes you want your code to do different things based on a condition. An `if` statement checks if something is true. If it is, the code inside it runs. If it's not, the code inside the `else` block runs instead."
+      },
+      {
+        "type": "code",
+        "text": "score = 85\n\nif score > 50:\n    print('You passed!')\nelse:\n    print('Keep practicing!')"
+      }
+    ]
+  }
+]

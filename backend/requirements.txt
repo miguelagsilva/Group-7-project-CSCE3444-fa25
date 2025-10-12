@@ -7,7 +7,6 @@ Flask==3.1.2
 itsdangerous==2.2.0
 Jinja2==3.1.6
 jwt==1.4.0
-logging==0.4.9.6
 MarkupSafe==3.0.2
 psycopg2==2.9.10
 pycparser==2.23

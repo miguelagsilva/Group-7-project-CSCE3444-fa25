@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Introduction to Python",
+    "description": "Start your coding adventure by learning the basics of Python.",
+    "status": "COMPLETED"
+  },
+  {
+    "id": 2,
+    "name": "Variables & Data Types",
+    "description": "Learn how to store and use different types of information.",
+    "status": "COMPLETED"
+  },
+  {
+    "id": 3,
+    "name": "Control Flow (If/Else)",
+    "description": "Make decisions in your code to create smarter programs.",
+    "status": "IN_PROGRESS"
+  },
+  {
+    "id": 4,
+    "name": "Loops (For/While)",
+    "description": "Repeat actions and work with collections of data efficiently.",
+    "status": "NOT_STARTED"
+  },
+  {
+    "id": 5,
+    "name": "Functions",
+    "description": "Package your code into reusable blocks.",
+    "status": "LOCKED"
+  }
+]

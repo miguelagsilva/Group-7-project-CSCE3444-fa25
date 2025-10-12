@@ -1,0 +1,37 @@
+[
+  {
+    "module_id": 1,
+    "quiz_id": 101,
+    "question": "What command is used to display text on the screen in Python?",
+    "options": ["display()", "show()", "print()", "text()"],
+    "answer": "print()"
+  },
+  {
+    "module_id": 2,
+    "quiz_id": 201,
+    "question": "What is the correct way to create a variable in Python?",
+    "options": ["var name = 'Alice'", "name = 'Alice'", "string name = 'Alice'", "let name = 'Alice'"],
+    "answer": "name = 'Alice'"
+  },
+  {
+    "module_id": 2,
+    "quiz_id": 202,
+    "question": "A variable that holds a whole number like 10 is called an...",
+    "options": ["String", "Float", "Integer", "Boolean"],
+    "answer": "Integer"
+  },
+  {
+    "module_id": 3,
+    "quiz_id": 301,
+    "question": "Which of these is a comparison operator?",
+    "options": ["=", "==", "+", "if"],
+    "answer": "=="
+  },
+  {
+    "module_id": 3,
+    "quiz_id": 302,
+    "question": "What will be printed by: `if False: print('A') else: print('B')`?",
+    "options": ["A", "B", "Nothing", "An error"],
+    "answer": "B"
+  }
+]
