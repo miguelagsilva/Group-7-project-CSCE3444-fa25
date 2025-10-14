@@ -2,7 +2,7 @@
 LeetCode for Kids is a web application that enables children to learn how to program in Python interactively.
 
 # Team Members
-- Aminat Usman:Team Coordinator, Frontend Developer
+- Aminat Usman: Team Coordinator, Frontend Developer
 - Miguel Silva: Frontend Development Coordinator / Requirements
 Coordinator
 - Arnav Saxena: Backend Development Coordinator
