@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Search, CheckCircle, Clock, BarChart3, FileText, GitBranch, RotateCcw, ShoppingCart, Zap } from 'lucide-react';
 import { Button } from './ui/button';
+import { getModulesByCourseId, Module } from '../api/data';
 
 interface ModuleCardProps {
   title: string;
@@ -74,64 +76,37 @@ function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardPr
 
 interface ModulesPageProps {
   onBack: () => void;
-  onModuleClick?: () => void;
+  onModuleClick?: (moduleId: string) => void;
   onProgressClick?: () => void;
-  onPracticeClick?: () => void;
-  onChallengeClick?: () => void;
-  onQuizClick?: () => void;
+  onFreeCodeClick?: () => void;
 }
 
-export function ModulesPage({ onBack, onModuleClick, onProgressClick, onPracticeClick, onChallengeClick, onQuizClick }: ModulesPageProps) {
-  const modules = [
-    {
-      title: "Introduction to Python",
-      icon: <Zap className="w-12 h-12" />,
-      status: 'completed' as const,
-      progress: 100
-    },
-    {
-      title: "Variables & Data Types",
-      icon: <FileText className="w-12 h-12" />,
-      status: 'completed' as const,
-      progress: 100
-    },
-    {
-      title: "Control Flow (If/Else)",
-      icon: <GitBranch className="w-12 h-12" />,
-      status: 'completed' as const,
-      progress: 100
-    },
-    {
-      title: "Control Flow (If)",
-      icon: <BarChart3 className="w-12 h-12" />,
-      status: 'completed' as const,
-      progress: 100
-    },
-    {
-      title: "Functions",
-      icon: <CheckCircle className="w-12 h-12" />,
-      status: 'in-progress' as const,
-      progress: 34
-    },
-    {
-      title: "Functions Advanced",
-      icon: <RotateCcw className="w-12 h-12" />,
-      status: 'in-progress' as const,
-      progress: 0
-    },
-    {
-      title: "Loops (For/While)",
-      icon: <Clock className="w-12 h-12" />,
-      status: 'in-progress' as const,
-      progress: 0
-    },
-    {
-      title: "Lists & Dictionaries",
-      icon: <ShoppingCart className="w-12 h-12" />,
-      status: 'locked' as const,
-      progress: 0
-    }
-  ];
+export function ModulesPage({ onBack, onModuleClick, onProgressClick, onFreeCodeClick }: ModulesPageProps) {
+  const [modules, setModules] = useState<Module[]>([]);
+
+  useEffect(() => {
+    getModulesByCourseId('python-adventures').then(setModules);
+  }, []);
+
+  const getIconForModule = (title: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      "Getting Started with Python": <Zap className="w-12 h-12" />,
+      "Variables and Data Types": <FileText className="w-12 h-12" />,
+      "Loops and Conditionals": <GitBranch className="w-12 h-12" />,
+      "Functions and Methods": <RotateCcw className="w-12 h-12" />,
+      "Lists and Collections": <ShoppingCart className="w-12 h-12" />,
+      "Loops: For and While": <Clock className="w-12 h-12" />,
+      "Dictionaries and Data": <BarChart3 className="w-12 h-12" />,
+      "Building Projects": <CheckCircle className="w-12 h-12" />
+    };
+    return iconMap[title] || <FileText className="w-12 h-12" />;
+  };
+
+  const getModuleStatus = (module: Module): 'completed' | 'in-progress' | 'locked' => {
+    if (module.locked) return 'locked';
+    if (module.completed) return 'completed';
+    return 'in-progress';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 relative overflow-hidden">
@@ -209,23 +184,9 @@ export function ModulesPage({ onBack, onModuleClick, onProgressClick, onPractice
               <Button 
                 variant="ghost" 
                 className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onPracticeClick}
+                onClick={onFreeCodeClick}
               >
-                Practice
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onChallengeClick}
-              >
-                Challenge
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onQuizClick}
-              >
-                Quiz
+                Free Code
               </Button>
               <Button 
                 variant="ghost" 
@@ -243,20 +204,16 @@ export function ModulesPage({ onBack, onModuleClick, onProgressClick, onPractice
           <h2 className="text-xl text-gray-700 mb-10">Your Learning Journey</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {modules.map((module, index) => (
+            {modules.map((module) => (
               <ModuleCard
-                key={index}
+                key={module.id}
                 title={module.title}
-                icon={module.icon}
-                status={module.status}
+                icon={getIconForModule(module.title)}
+                status={getModuleStatus(module)}
                 progress={module.progress}
                 onClick={() => {
-                  if (module.status !== 'locked') {
-                    if (module.title === "Variables & Data Types" && onModuleClick) {
-                      onModuleClick();
-                    } else {
-                      console.log(`Opening module: ${module.title}`);
-                    }
+                  if (!module.locked && onModuleClick) {
+                    onModuleClick(module.id);
                   }
                 }}
               />

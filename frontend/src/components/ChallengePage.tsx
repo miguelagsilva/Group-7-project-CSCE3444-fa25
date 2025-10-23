@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Search, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame } from 'lucide-react';
+import { ArrowLeft, Search, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame, Lightbulb } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -7,9 +7,12 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 interface ChallengePageProps {
   onBack: () => void;
   onProgressClick?: () => void;
+  onLearnClick?: () => void;
+  onFreeCodeClick?: () => void;
+  onQuizClick?: () => void;
 }
 
-export function ChallengePage({ onBack, onProgressClick }: ChallengePageProps) {
+export function ChallengePage({ onBack, onProgressClick, onLearnClick, onFreeCodeClick, onQuizClick }: ChallengePageProps) {
   const [code, setCode] = useState(`# 🔥 CHALLENGE: FizzBuzz Adventure! 
 # Write a program that prints numbers 1 to 15
 # BUT: Replace multiples of 3 with "Fizz"
@@ -24,6 +27,7 @@ for i in range(1, 16):
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
   const [score, setScore] = useState(0);
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [showHints, setShowHints] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const lineCount = code.split('\n').length;
@@ -141,16 +145,31 @@ for i in range(1, 16):
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-2xl p-2 shadow-lg">
             <div className="flex space-x-2">
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onLearnClick}
+              >
                 Learn
               </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
-                Practice
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onFreeCodeClick}
+              >
+                Free Code
               </Button>
-              <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium">
+              <Button 
+                variant="ghost" 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600"
+              >
                 Challenge
               </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onQuizClick}
+              >
                 Quiz
               </Button>
               <Button 
@@ -217,19 +236,12 @@ for i in range(1, 16):
               <h3 className="text-lg font-semibold text-gray-800">Challenge</h3>
             </div>
             
-            <div className="flex items-start space-x-4 mb-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">🔥</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-gray-800 mb-2">FizzBuzz Challenge</h4>
-                <p className="text-gray-700 leading-relaxed text-sm">
-                  Classic coding challenge! Print numbers 1-15, but replace multiples of 3 with "Fizz", 
-                  multiples of 5 with "Buzz", and multiples of both with "FizzBuzz".
-                </p>
-              </div>
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-800 mb-2">FizzBuzz Challenge</h4>
+              <p className="text-gray-700 leading-relaxed text-sm">
+                Classic coding challenge! Print numbers 1-15, but replace multiples of 3 with "Fizz", 
+                multiples of 5 with "Buzz", and multiples of both with "FizzBuzz".
+              </p>
             </div>
 
             {/* Challenge Requirements */}
@@ -255,14 +267,46 @@ for i in range(1, 16):
               </ul>
             </div>
 
-            {/* Challenge Illustration */}
-            <div className="text-center">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1758718035215-f76eb1bba569?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwdXp6bGUlMjBzb2x2aW5nJTIwYnJhaW4lMjBjaGFsbGVuZ2V8ZW58MXx8fHwxNzU5MjQ1MDM4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                alt="Puzzle challenge"
-                className="w-20 h-20 object-cover rounded-xl mx-auto"
-              />
+            {/* Hints Section */}
+            <div className="mb-6">
+              <Button
+                onClick={() => setShowHints(!showHints)}
+                variant="outline"
+                className="w-full rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium py-3"
+              >
+                <Lightbulb className="w-5 h-5 mr-2" />
+                {showHints ? 'Hide Hints' : 'Need a Hint?'}
+              </Button>
+              
+              {showHints && (
+                <div className="mt-4 bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4 animate-in fade-in duration-300">
+                  <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
+                    <Lightbulb className="w-4 h-4 mr-2" />
+                    Helpful Hints:
+                  </h5>
+                  <ul className="space-y-3 text-sm text-yellow-900">
+                    <li className="flex items-start space-x-2">
+                      <span className="text-yellow-600 font-bold">💡</span>
+                      <span>Use the <code className="bg-yellow-100 px-1 rounded">%</code> (modulo) operator to check if a number is divisible</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-yellow-600 font-bold">💡</span>
+                      <span>Check for multiples of both 3 AND 5 first, before checking each separately</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-yellow-600 font-bold">💡</span>
+                      <span>Use <code className="bg-yellow-100 px-1 rounded">if/elif/else</code> statements to handle different cases</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-yellow-600 font-bold">💡</span>
+                      <span>If a number is divisible by 15, it's divisible by both 3 and 5!</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
+
+
           </div>
 
           {/* Code Editor */}
@@ -402,23 +446,8 @@ for i in range(1, 16):
               </div>
             </div>
             
-            {/* Expected Output Preview */}
-            <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">Expected Output:</h4>
-              <div className="text-xs font-mono text-gray-600 space-y-1">
-                <div>1</div>
-                <div>2</div>
-                <div className="text-blue-600">Fizz</div>
-                <div>4</div>
-                <div className="text-purple-600">Buzz</div>
-                <div className="text-blue-600">Fizz</div>
-                <div>...</div>
-                <div className="text-red-600">FizzBuzz</div>
-              </div>
-            </div>
-
             {/* Test Console */}
-            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[200px]">
+            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[300px]">
               <div className="text-green-400 font-mono text-sm">
                 {!hasRun ? (
                   <div className="text-gray-500">
@@ -483,14 +512,7 @@ for i in range(1, 16):
               </div>
             )}
 
-            {/* Challenge Trophy */}
-            <div className="text-center mt-6">
-              <ImageWithFallback
-                src="https://images.unsplash.com/photo-1514820720301-4c4790309f46?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cm9waHklMjBjaGFsbGVuZ2UlMjBjb21wZXRpdGlvbiUyMGNvZGluZ3xlbnwxfHx8fDE3NTkyNDUwMzV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                alt="Challenge trophy"
-                className="w-16 h-16 object-cover rounded-xl mx-auto"
-              />
-            </div>
+
           </div>
         </div>
 

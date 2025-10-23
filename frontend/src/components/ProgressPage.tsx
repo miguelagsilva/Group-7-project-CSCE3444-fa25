@@ -1,14 +1,40 @@
-import { ArrowLeft, Search, User, Edit3, Star, Award, Code, Zap, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Search, Edit3, Code, CheckCircle, Lock } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
-import { Badge } from './ui/badge';
+import { modulesData } from '../api/data';
 
 interface ProgressPageProps {
   onBack: () => void;
+  onLearnClick?: () => void;
+  onFreeCodeClick?: () => void;
 }
 
-export function ProgressPage({ onBack }: ProgressPageProps) {
+export function ProgressPage({ onBack, onLearnClick, onFreeCodeClick }: ProgressPageProps) {
+  // Calculate overall progress from module data
+  const totalModules = modulesData.length;
+  const totalProgress = modulesData.reduce((sum, module) => sum + module.progress, 0);
+  const overallProgress = Math.round(totalProgress / totalModules);
+  
+  // Find current module (first incomplete module with some progress, or first incomplete)
+  const currentModule = modulesData.find(m => !m.completed && m.progress > 0) || modulesData.find(m => !m.completed);
+  const completedModules = modulesData.filter(m => m.completed);
+  
+  // Get exactly the first 4 modules for the journey visualization
+  const journeyModules = modulesData.slice(0, 4);
+  
+  // Helper function to get short name
+  const getShortName = (title: string) => {
+    if (title.includes('Getting Started')) return 'Getting Started';
+    if (title.includes('Variables')) return 'Variables';
+    if (title.includes('Loops and Conditionals')) return 'Loops';
+    if (title.includes('Functions')) return 'Functions';
+    if (title.includes('Lists')) return 'Lists';
+    if (title.includes('Loops: For')) return 'For & While';
+    if (title.includes('Dictionaries')) return 'Dictionaries';
+    if (title.includes('Projects')) return 'Projects';
+    return title;
+  };
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 relative overflow-hidden">
       {/* Wavy background layers matching landing page */}
@@ -76,17 +102,19 @@ export function ProgressPage({ onBack }: ProgressPageProps) {
         <div className="flex justify-center mb-6">
           <div className="bg-white rounded-2xl p-2 shadow-lg">
             <div className="flex space-x-2">
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onLearnClick}
+              >
                 Learn
               </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
-                Practice
-              </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
-                Challenge
-              </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
-                Quiz
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onFreeCodeClick}
+              >
+                Free Code
               </Button>
               <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium">
                 Progress
@@ -105,12 +133,43 @@ export function ProgressPage({ onBack }: ProgressPageProps) {
                   <span className="text-4xl">🦸</span>
                 </div>
                 <h2 className="text-xl font-bold text-gray-800 mb-1">Alex Chen</h2>
-                <p className="text-gray-600 mb-2">Age 10 | Level 3</p>
-                <div className="flex justify-center">
-                  <Badge className="bg-yellow-100 text-yellow-800 px-3 py-1">
-                    ⭐ Rising Star
-                  </Badge>
+                <p className="text-gray-600">Age 10 | Level 3</p>
+              </div>
+            </Card>
+
+            {/* Overall Progress Card */}
+            <Card className="p-6 rounded-3xl shadow-lg mb-4">
+              <h3 className="text-center font-bold text-gray-700 mb-3">Course Progress</h3>
+              <div className="flex justify-center mb-3">
+                <div className="relative w-24 h-24">
+                  <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 120 120">
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="45"
+                      stroke="#e5e7eb"
+                      strokeWidth="10"
+                      fill="none"
+                    />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="45"
+                      stroke="#3b82f6"
+                      strokeWidth="10"
+                      fill="none"
+                      strokeDasharray={`${overallProgress * 2.827} 282.7`}
+                      strokeLinecap="round"
+                      className="transition-all duration-1000"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-blue-600">{overallProgress}%</span>
+                  </div>
                 </div>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">{completedModules.length} of {totalModules} modules complete</p>
               </div>
             </Card>
 
@@ -156,160 +215,202 @@ export function ProgressPage({ onBack }: ProgressPageProps) {
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">My Coding Journey</h2>
               
               {/* Journey Path SVG */}
-              <div className="relative h-48 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-4 overflow-hidden">
+              <div className="relative h-56 bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-4 overflow-hidden">
                 {/* Path Line */}
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 600 180">
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 700 200">
                   <path
-                    d="M50 150 Q150 120 250 130 T450 100 Q500 90 550 80"
-                    stroke="#22c55e"
+                    d="M60 170 Q140 150 220 155 Q300 160 380 145 Q460 130 540 125 Q600 120 640 110"
+                    stroke={completedModules.length > 0 ? "#22c55e" : "#9ca3af"}
                     strokeWidth="4"
                     fill="none"
                     strokeDasharray="8,4"
-                    className="animate-pulse"
+                    className={completedModules.length > 0 ? "animate-pulse" : ""}
                   />
                 </svg>
 
-                {/* Journey Points */}
+                {/* Journey Points - Dynamic 4 modules */}
                 <div className="relative z-10">
-                  {/* Start Point */}
-                  <div className="absolute left-6 bottom-6">
-                    <div className="bg-green-500 p-2 rounded-lg shadow-lg">
-                      <CheckCircle className="w-4 h-4 text-white" />
+                  {/* Position 1 - Getting Started - Far Left */}
+                  {journeyModules[0] && (
+                    <div className="absolute left-8 bottom-8">
+                      <div className={`${journeyModules[0].completed ? 'bg-green-500' : journeyModules[0].progress > 0 ? 'bg-blue-500' : 'bg-gray-300'} p-2 rounded-lg shadow-lg ${journeyModules[0].progress > 0 && !journeyModules[0].completed ? 'animate-bounce' : ''}`}>
+                        {journeyModules[0].completed ? (
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        ) : journeyModules[0].progress > 0 ? (
+                          <span className="text-white text-sm">🚀</span>
+                        ) : (
+                          <Lock className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                      <div className={`${journeyModules[0].completed ? 'bg-green-100' : journeyModules[0].progress > 0 ? 'bg-blue-100' : 'bg-gray-100'} px-2 py-1 rounded-md mt-1 max-w-[80px]`}>
+                        <span className={`${journeyModules[0].completed ? 'text-green-800' : journeyModules[0].progress > 0 ? 'text-blue-800' : 'text-gray-600'} font-bold text-xs truncate block`}>
+                          {getShortName(journeyModules[0].title)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-green-100 px-2 py-1 rounded-md mt-1">
-                      <span className="text-green-800 font-bold text-xs">First Code</span>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Variables Point */}
-                  <div className="absolute left-28 top-20">
-                    <div className="bg-green-500 p-2 rounded-lg shadow-lg">
-                      <span className="text-white text-sm">📦</span>
+                  {/* Position 2 - Variables - Center Left */}
+                  {journeyModules[1] && (
+                    <div className="absolute left-1/3 top-20 transform -translate-x-1/2">
+                      <div className={`${journeyModules[1].completed ? 'bg-green-500' : journeyModules[1].progress > 0 ? 'bg-blue-500' : 'bg-gray-300'} p-2 rounded-lg shadow-lg ${journeyModules[1].progress > 0 && !journeyModules[1].completed ? 'animate-bounce' : ''}`}>
+                        {journeyModules[1].completed ? (
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        ) : journeyModules[1].progress > 0 ? (
+                          <span className="text-white text-sm">🚀</span>
+                        ) : (
+                          <Lock className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                      <div className={`${journeyModules[1].completed ? 'bg-green-100' : journeyModules[1].progress > 0 ? 'bg-blue-100' : 'bg-gray-100'} px-2 py-1 rounded-md mt-1 max-w-[80px]`}>
+                        <span className={`${journeyModules[1].completed ? 'text-green-800' : journeyModules[1].progress > 0 ? 'text-blue-800' : 'text-gray-600'} font-bold text-xs truncate block`}>
+                          {getShortName(journeyModules[1].title)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-green-100 px-2 py-1 rounded-md mt-1">
-                      <span className="text-green-800 font-bold text-xs">Variables</span>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Castle (Major Milestone) */}
-                  <div className="absolute left-1/2 top-8 transform -translate-x-1/2">
-                    <div className="bg-yellow-400 p-2 rounded-lg shadow-lg">
-                      <span className="text-white text-sm">🏰</span>
+                  {/* Position 3 - Loops - Center Right */}
+                  {journeyModules[2] && (
+                    <div className="absolute left-1/2 top-12 transform -translate-x-1/2">
+                      <div className={`${journeyModules[2].completed ? 'bg-green-500' : journeyModules[2].progress > 0 ? 'bg-blue-500' : 'bg-gray-300'} p-2 rounded-lg shadow-lg ${journeyModules[2].progress > 0 && !journeyModules[2].completed ? 'animate-bounce' : ''}`}>
+                        {journeyModules[2].completed ? (
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        ) : journeyModules[2].progress > 0 ? (
+                          <span className="text-white text-sm">🚀</span>
+                        ) : (
+                          <Lock className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                      <div className={`${journeyModules[2].completed ? 'bg-green-100' : journeyModules[2].progress > 0 ? 'bg-blue-100' : 'bg-gray-100'} px-2 py-1 rounded-md mt-1 max-w-[80px]`}>
+                        <span className={`${journeyModules[2].completed ? 'text-green-800' : journeyModules[2].progress > 0 ? 'text-blue-800' : 'text-gray-600'} font-bold text-xs truncate block`}>
+                          {getShortName(journeyModules[2].title)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-yellow-100 px-2 py-1 rounded-md mt-1">
-                      <span className="text-yellow-800 font-bold text-xs">Control Flow</span>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Current Progress */}
-                  <div className="absolute right-28 top-12">
-                    <div className="bg-blue-500 p-2 rounded-lg shadow-lg animate-bounce">
-                      <span className="text-white text-sm">🚀</span>
+                  {/* Position 4 - Functions - Far Right */}
+                  {journeyModules[3] && (
+                    <div className="absolute right-8 top-6">
+                      <div className={`${journeyModules[3].completed ? 'bg-green-500' : journeyModules[3].progress > 0 ? 'bg-blue-500' : 'bg-gray-300'} p-2 rounded-lg shadow-lg ${journeyModules[3].progress > 0 && !journeyModules[3].completed ? 'animate-bounce' : ''}`}>
+                        {journeyModules[3].completed ? (
+                          <CheckCircle className="w-4 h-4 text-white" />
+                        ) : journeyModules[3].progress > 0 ? (
+                          <span className="text-white text-sm">🚀</span>
+                        ) : (
+                          <Lock className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                      <div className={`${journeyModules[3].completed ? 'bg-green-100' : journeyModules[3].progress > 0 ? 'bg-blue-100' : 'bg-gray-100'} px-2 py-1 rounded-md mt-1 max-w-[80px]`}>
+                        <span className={`${journeyModules[3].completed ? 'text-green-800' : journeyModules[3].progress > 0 ? 'text-blue-800' : 'text-gray-600'} font-bold text-xs truncate block`}>
+                          {getShortName(journeyModules[3].title)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="bg-blue-100 px-2 py-1 rounded-md mt-1">
-                      <span className="text-blue-800 font-bold text-xs">Functions</span>
-                    </div>
-                  </div>
-
-                  {/* Future Goals */}
-                  <div className="absolute right-6 top-4">
-                    <div className="bg-gray-300 p-2 rounded-lg shadow-lg">
-                      <span className="text-gray-600 text-sm">🎯</span>
-                    </div>
-                    <div className="bg-gray-100 px-2 py-1 rounded-md mt-1">
-                      <span className="text-gray-600 font-bold text-xs">Projects</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Progress Circle */}
-              <Card className="p-6 rounded-3xl shadow-lg">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Overall Progress</h3>
-                <div className="flex justify-center">
-                  <div className="relative w-32 h-32">
-                    {/* Background Circle */}
-                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="50"
-                        stroke="#e5e7eb"
-                        strokeWidth="8"
-                        fill="none"
-                      />
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="50"
-                        stroke="#3b82f6"
-                        strokeWidth="8"
-                        fill="none"
-                        strokeDasharray={`${75 * 3.14} 314`}
-                        strokeLinecap="round"
-                        className="transition-all duration-1000"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-800">75%</div>
-                        <div className="text-xs text-gray-600">Complete</div>
+            {/* Module Progress List */}
+            <Card className="p-6 rounded-3xl shadow-lg mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Module Progress</h2>
+              <div className="space-y-3">
+                {modulesData.map((module, index) => {
+                  const isCompleted = module.completed;
+                  const isInProgress = !module.completed && module.progress > 0;
+                  const isUpNext = !isCompleted && !isInProgress && index === completedModules.length + (currentModule ? 1 : 0);
+                  
+                  return (
+                    <div
+                      key={module.id}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 ${
+                        isCompleted
+                          ? 'bg-green-50 border-green-200'
+                          : isInProgress
+                          ? 'bg-blue-50 border-blue-300 shadow-md'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`p-2 rounded-lg ${
+                            isCompleted
+                              ? 'bg-green-500'
+                              : isInProgress
+                              ? 'bg-blue-500 animate-pulse'
+                              : 'bg-gray-300'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle className="w-5 h-5 text-white" />
+                          ) : isInProgress ? (
+                            <span className="text-xl">🚀</span>
+                          ) : (
+                            <Lock className="w-5 h-5 text-gray-500" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className={`font-bold ${isCompleted || isInProgress ? 'text-gray-800' : 'text-gray-700'}`}>
+                            {module.title}
+                          </h3>
+                          <p className={`text-sm ${
+                            isCompleted
+                              ? 'text-gray-600'
+                              : isInProgress
+                              ? 'text-blue-600 font-medium'
+                              : 'text-gray-500'
+                          }`}>
+                            {isCompleted
+                              ? 'All lessons completed!'
+                              : isInProgress
+                              ? 'Currently learning...'
+                              : isUpNext
+                              ? 'Up next!'
+                              : index === modulesData.length - 1
+                              ? 'Final module!'
+                              : 'Coming soon'}
+                          </p>
+                        </div>
+                      </div>
+                      <div
+                        className={`px-4 py-2 rounded-lg ${
+                          isCompleted
+                            ? 'bg-green-500'
+                            : isInProgress
+                            ? 'bg-blue-500'
+                            : 'bg-gray-300'
+                        }`}
+                      >
+                        <span className={`font-bold ${isCompleted || isInProgress ? 'text-white' : 'text-gray-600'}`}>
+                          {module.progress}%
+                        </span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </Card>
+                  );
+                })}
+              </div>
+            </Card>
 
-              {/* Earned Badges */}
-              <Card className="p-6 rounded-3xl shadow-lg">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Earned Badges</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-yellow-400 rounded-xl flex items-center justify-center mx-auto mb-1 shadow-lg">
-                      <Star className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-700">First Steps</span>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-1 shadow-lg">
-                      <Code className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-700">Logic Master</span>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mx-auto mb-1 shadow-lg">
-                      <Zap className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-700">Speed Coder</span>
-                  </div>
-                  
-                  <div className="text-center opacity-50">
-                    <div className="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center mx-auto mb-1">
-                      <Award className="w-6 h-6 text-gray-500" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-500">Problem Solver</span>
-                  </div>
-                  
-                  <div className="text-center opacity-50">
-                    <div className="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center mx-auto mb-1">
-                      <User className="w-6 h-6 text-gray-500" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-500">Team Player</span>
-                  </div>
-                  
-                  <div className="text-center opacity-50">
-                    <div className="w-12 h-12 bg-gray-300 rounded-xl flex items-center justify-center mx-auto mb-1">
-                      <CheckCircle className="w-6 h-6 text-gray-500" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-500">Completionist</span>
-                  </div>
+            {/* Detailed Progress Stats */}
+            <Card className="p-6 rounded-3xl shadow-lg max-w-2xl mx-auto">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Course Statistics</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-xl">
+                  <div className="text-3xl font-bold text-green-600">{completedModules.length}</div>
+                  <div className="text-sm text-gray-600 mt-1">Completed</div>
                 </div>
-              </Card>
-            </div>
+                <div className="text-center p-4 bg-blue-50 rounded-xl">
+                  <div className="text-3xl font-bold text-blue-600">{currentModule ? '1' : '0'}</div>
+                  <div className="text-sm text-gray-600 mt-1">In Progress</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-xl">
+                  <div className="text-3xl font-bold text-gray-600">{totalModules - completedModules.length - (currentModule ? 1 : 0)}</div>
+                  <div className="text-sm text-gray-600 mt-1">Remaining</div>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </div>

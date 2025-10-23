@@ -8,12 +8,13 @@ import { Footer } from "./components/Footer";
 import { ModulesPage } from "./components/ModulesPage";
 import { ModuleDetailPage } from "./components/ModuleDetailPage";
 import { ProgressPage } from "./components/ProgressPage";
-import { PracticePage } from "./components/PracticePage";
+import { FreeCodePage } from "./components/FreeCodePage";
 import { ChallengePage } from "./components/ChallengePage";
 import { QuizPage } from "./components/QuizPage";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'modules' | 'module-detail' | 'progress' | 'practice' | 'challenge' | 'quiz'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'modules' | 'module-detail' | 'progress' | 'freecode' | 'challenge' | 'quiz'>('landing');
+  const [selectedModuleId, setSelectedModuleId] = useState<string>('module-2');
 
   const navigateToModules = () => {
     setCurrentPage('modules');
@@ -23,7 +24,10 @@ export default function App() {
     setCurrentPage('landing');
   };
 
-  const navigateToModuleDetail = () => {
+  const navigateToModuleDetail = (moduleId?: string) => {
+    if (moduleId) {
+      setSelectedModuleId(moduleId);
+    }
     setCurrentPage('module-detail');
   };
 
@@ -31,8 +35,8 @@ export default function App() {
     setCurrentPage('progress');
   };
 
-  const navigateToPractice = () => {
-    setCurrentPage('practice');
+  const navigateToFreeCode = () => {
+    setCurrentPage('freecode');
   };
 
   const navigateToChallenge = () => {
@@ -48,29 +52,50 @@ export default function App() {
   };
 
   if (currentPage === 'quiz') {
-    return <QuizPage onBack={navigateToModuleDetail} onProgressClick={navigateToProgress} />;
+    return <QuizPage 
+      onBack={navigateToModuleDetail} 
+      onProgressClick={navigateToProgress}
+      onLearnClick={navigateBackToModules}
+      onFreeCodeClick={navigateToFreeCode}
+      onChallengeClick={navigateToChallenge}
+    />;
   }
 
   if (currentPage === 'challenge') {
-    return <ChallengePage onBack={navigateToModuleDetail} onProgressClick={navigateToProgress} />;
-  }
-
-  if (currentPage === 'practice') {
-    return <PracticePage 
+    return <ChallengePage 
       onBack={navigateToModuleDetail} 
       onProgressClick={navigateToProgress}
-      onLearnClick={navigateToModuleDetail}
-      onChallengeClick={navigateToChallenge}
+      onLearnClick={navigateBackToModules}
+      onFreeCodeClick={navigateToFreeCode}
       onQuizClick={navigateToQuiz}
     />;
   }
 
+  if (currentPage === 'freecode') {
+    return <FreeCodePage 
+      onBack={navigateBackToModules} 
+      onProgressClick={navigateToProgress}
+      onLearnClick={navigateBackToModules}
+    />;
+  }
+
   if (currentPage === 'progress') {
-    return <ProgressPage onBack={navigateBackToModules} />;
+    return <ProgressPage 
+      onBack={navigateBackToModules}
+      onLearnClick={navigateBackToModules}
+      onFreeCodeClick={navigateToFreeCode}
+    />;
   }
 
   if (currentPage === 'module-detail') {
-    return <ModuleDetailPage onBack={navigateBackToModules} onProgressClick={navigateToProgress} onPracticeClick={navigateToPractice} onChallengeClick={navigateToChallenge} onQuizClick={navigateToQuiz} />;
+    return <ModuleDetailPage 
+      moduleId={selectedModuleId}
+      onBack={navigateBackToModules} 
+      onProgressClick={navigateToProgress} 
+      onFreeCodeClick={navigateToFreeCode} 
+      onChallengeClick={navigateToChallenge} 
+      onQuizClick={navigateToQuiz} 
+    />;
   }
 
   if (currentPage === 'modules') {
@@ -78,9 +103,7 @@ export default function App() {
       onBack={navigateToLanding} 
       onModuleClick={navigateToModuleDetail} 
       onProgressClick={navigateToProgress}
-      onPracticeClick={navigateToPractice}
-      onChallengeClick={navigateToChallenge}
-      onQuizClick={navigateToQuiz}
+      onFreeCodeClick={navigateToFreeCode}
     />;
   }
 
