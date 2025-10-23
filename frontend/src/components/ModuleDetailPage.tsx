@@ -10,33 +10,42 @@ import { getLessonsByModuleId, getModuleById, Lesson, Module } from '../api/data
 interface ModuleDetailPageProps {
   moduleId: string;
   onBack: () => void;
-  onProgressClick?: () => void;
-  onFreeCodeClick?: () => void;
   onChallengeClick?: () => void;
   onQuizClick?: () => void;
 }
 
-export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCodeClick, onChallengeClick, onQuizClick }: ModuleDetailPageProps) {
+export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizClick }: ModuleDetailPageProps) {
   const [currentModule, setCurrentModule] = useState<Module | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [codeOutputs, setCodeOutputs] = useState<Record<number, string>>({});
   const [runningCode, setRunningCode] = useState<Record<number, boolean>>({});
   const [editedCode, setEditedCode] = useState<Record<number, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load the selected module and its lessons
-    getModuleById(moduleId).then((module) => {
-      if (module) setCurrentModule(module);
-    });
+    // Reset loading state when moduleId changes
+    setIsLoading(true);
+    setCurrentModule(null);
+    setLessons([]);
+    setCurrentLessonIndex(0);
     
-    getLessonsByModuleId(moduleId).then((loadedLessons) => {
+    // Load the selected module and its lessons
+    Promise.all([
+      getModuleById(moduleId),
+      getLessonsByModuleId(moduleId)
+    ]).then(([module, loadedLessons]) => {
+      if (module) setCurrentModule(module);
       setLessons(loadedLessons);
-      setCurrentLessonIndex(0); // Reset to first lesson when module changes
+      setCurrentLessonIndex(0);
       // Reset code states when changing lessons
       setCodeOutputs({});
       setRunningCode({});
       setEditedCode({});
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Error loading module data:', error);
+      setIsLoading(false);
     });
   }, [moduleId]);
 
@@ -345,13 +354,6 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
               <Button 
                 variant="ghost" 
                 className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
-                onClick={onFreeCodeClick}
-              >
-                Free Code
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
                 onClick={onChallengeClick}
               >
                 Challenge
@@ -362,13 +364,6 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
                 onClick={onQuizClick}
               >
                 Quiz
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
-                onClick={onProgressClick}
-              >
-                Progress
               </Button>
             </div>
           </div>
@@ -393,7 +388,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             </div>
 
             {/* Loading State */}
-            {!currentLesson && lessons.length === 0 && (
+            {isLoading && (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">📚</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading lessons...</h2>
@@ -402,7 +397,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             )}
 
             {/* No Lessons State */}
-            {!currentLesson && lessons.length === 0 && currentModule && (
+            {!isLoading && !currentLesson && lessons.length === 0 && (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🚧</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Coming Soon!</h2>
@@ -411,7 +406,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             )}
 
             {/* Lesson Content */}
-            {currentLesson && (
+            {!isLoading && currentLesson && (
               <>
                 <Card className="p-8 mb-8 rounded-3xl shadow-lg">
                   <div className="flex items-start space-x-6">
@@ -585,28 +580,31 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             )}
 
             {/* Next Lesson Button */}
-            <div className="text-center">
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
-                onClick={() => {
-                  if (currentLessonIndex < lessons.length - 1) {
-                    setCurrentLessonIndex(currentLessonIndex + 1);
+            {!isLoading && lessons.length > 0 && (
+              <div className="text-center">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                  onClick={() => {
+                    if (currentLessonIndex < lessons.length - 1) {
+                      setCurrentLessonIndex(currentLessonIndex + 1);
+                    }
+                  }}
+                  disabled={currentLessonIndex >= lessons.length - 1}
+                >
+                  <span className="mr-3">🚀</span>
+                  {currentLessonIndex < lessons.length - 1 
+                    ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
+                    : 'Module Complete!'
                   }
-                }}
-                disabled={currentLessonIndex >= lessons.length - 1}
-              >
-                <span className="mr-3">🚀</span>
-                {currentLessonIndex < lessons.length - 1 
-                  ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
-                  : 'Module Complete!'
-                }
-                <span className="ml-3">→</span>
-              </Button>
-            </div>
+                  <span className="ml-3">→</span>
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Progress Sidebar */}
-          <div className="w-80">
+          {!isLoading && lessons.length > 0 && (
+            <div className="w-80">
             <Card className="p-6 rounded-3xl shadow-lg sticky top-8">
               <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                 <Star className="w-6 h-6 text-yellow-500 mr-3" />
@@ -654,16 +652,6 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
                 })}
                 
                 <div 
-                  className="flex items-center justify-between bg-green-50 p-3 rounded-xl cursor-pointer hover:bg-green-100 transition-colors"
-                  onClick={onFreeCodeClick}
-                >
-                  <span className="text-green-800 font-medium">Free Code!</span>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                    <Play className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <div 
                   className="flex items-center justify-between bg-orange-50 p-3 rounded-xl cursor-pointer hover:bg-orange-100 transition-colors"
                   onClick={onChallengeClick}
                 >
@@ -695,6 +683,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
               </div>
             </Card>
           </div>
+          )}
         </div>
       </div>
     </div>

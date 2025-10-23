@@ -53,20 +53,18 @@ export default function App() {
 
   if (currentPage === 'quiz') {
     return <QuizPage 
-      onBack={navigateToModuleDetail} 
-      onProgressClick={navigateToProgress}
-      onLearnClick={navigateBackToModules}
-      onFreeCodeClick={navigateToFreeCode}
+      moduleId={selectedModuleId}
+      onBack={() => navigateToModuleDetail(selectedModuleId)} 
+      onLearnClick={() => navigateToModuleDetail(selectedModuleId)}
       onChallengeClick={navigateToChallenge}
     />;
   }
 
   if (currentPage === 'challenge') {
     return <ChallengePage 
-      onBack={navigateToModuleDetail} 
-      onProgressClick={navigateToProgress}
-      onLearnClick={navigateBackToModules}
-      onFreeCodeClick={navigateToFreeCode}
+      moduleId={selectedModuleId}
+      onBack={() => navigateToModuleDetail(selectedModuleId)} 
+      onLearnClick={() => navigateToModuleDetail(selectedModuleId)}
       onQuizClick={navigateToQuiz}
     />;
   }
@@ -91,8 +89,6 @@ export default function App() {
     return <ModuleDetailPage 
       moduleId={selectedModuleId}
       onBack={navigateBackToModules} 
-      onProgressClick={navigateToProgress} 
-      onFreeCodeClick={navigateToFreeCode} 
       onChallengeClick={navigateToChallenge} 
       onQuizClick={navigateToQuiz} 
     />;
