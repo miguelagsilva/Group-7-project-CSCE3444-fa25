@@ -1,0 +1,93 @@
+[
+  {
+    "module_id": 1,
+    "title": "What is Python?",
+    "video_url": "https://www.youtube.com/embed/some_video_id_1",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Python is a popular, easy-to-learn programming language. It's like giving instructions to a computer in a language it can understand. Your first step is often to make the computer say 'Hello, World!'."
+      },
+      {
+        "type": "code",
+        "text": "# This is a comment. Python ignores it.\n# The print() function displays text on the screen.\nprint('Hello, World!')"
+      }
+    ]
+  },
+  {
+    "module_id": 2,
+    "title": "What is a Variable?",
+    "video_url": "https://www.youtube.com/embed/some_video_id_2",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Think of a variable as a labeled box where you can store information. You give the box a name, and you can put different types of data inside it, like text (Strings), whole numbers (Integers), or numbers with decimals (Floats)."
+      },
+      {
+        "type": "code",
+        "text": "# Storing a String (text)\nplayer_name = \"Sparky\"\n\n# Storing an Integer (whole number)\nplayer_score = 100\n\n# Storing a Float (decimal number)\nplayer_health = 95.5"
+      }
+    ]
+  },
+  {
+    "module_id": 3,
+    "title": "Making Choices with If/Else",
+    "video_url": "https://www.youtube.com/embed/some_video_id_3",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Sometimes you want your code to do different things based on a condition. An `if` statement checks if something is true. If it is, one block of code runs. If it's not, the code inside the `else` block runs instead. You can also use `elif` (else if) to check multiple conditions."
+      },
+      {
+        "type": "code",
+        "text": "age = 10\n\nif age < 8:\n    print('You get a small prize!')\nelif age < 12:\n    print('You get a medium prize!')\nelse:\n    print('You get a large prize!')"
+      }
+    ]
+  },
+  {
+    "module_id": 4,
+    "title": "Repeating with Loops",
+    "video_url": "https://www.youtube.com/embed/some_video_id_4",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "Loops are used to repeat a block of code. A `for` loop is great for repeating a specific number of times. A `while` loop is used to repeat as long as a certain condition is true."
+      },
+      {
+        "type": "code",
+        "text": "# A for loop that counts from 0 to 4\nfor i in range(5):\n    print(i)\n\n# A while loop that counts down\ncount = 3\nwhile count > 0:\n    print(count)\n    count = count - 1\nprint('Blast off!')"
+      }
+    ]
+  },
+  {
+    "module_id": 5,
+    "title": "Creating with Functions",
+    "video_url": "https://www.youtube.com/embed/some_video_id_5",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "A function is a named, reusable block of code that performs a specific task. You can 'call' a function whenever you need it. Functions can also take inputs, called arguments, to produce different results."
+      },
+      {
+        "type": "code",
+        "text": "# Defining a function\ndef greet(name):\n    print('Hello, ' + name + '!')\n\n# Calling the function with different arguments\ngreet('Alex')\ngreet('Bella')"
+      }
+    ]
+  },
+  {
+    "module_id": 6,
+    "title": "Organizing with Lists and Dictionaries",
+    "video_url": "https://www.youtube.com/embed/some_video_id_6",
+    "content": [
+      {
+        "type": "paragraph",
+        "text": "A `List` is an ordered collection of items, like a shopping list. A `Dictionary` is a collection of key-value pairs, like a real dictionary where you look up a word (the key) to find its definition (the value)."
+      },
+      {
+        "type": "code",
+        "text": "# A list of items\ninventory = ['sword', 'shield', 'potion']\nprint(inventory[0]) # Prints 'sword'\n\n# A dictionary of player stats\nplayer = {'name': 'Leo', 'level': 5, 'hp': 100}\nprint(player['name']) # Prints 'Leo'"
+      }
+    ]
+  }
+]
+
