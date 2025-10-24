@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Search, Play, Code, RotateCcw, Terminal } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -30,16 +30,60 @@ print(f"{x} + {y} = {x + y}")
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
 
+  const pyodideRef = useRef<any>(null);
+
+useEffect(() => {
+  const loadPyodide = async () => {
+    setOutput('⏳ Loading Python runtime...');
+    try {
+      // Dynamically import the real Pyodide loader
+      const { loadPyodide } = await import('https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs');
+
+      const pyodide = await loadPyodide({
+        indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/',
+      });
+
+      pyodideRef.current = pyodide;
+      setOutput('✅ Python runtime loaded! Ready to run code.');
+    } catch (err) {
+      setOutput('❌ Failed to load Pyodide. Check your internet connection.');
+    }
+  };
+
+  loadPyodide();
+}, []);
+
   const runCode = async () => {
+    if (!pyodideRef.current) {
+      setOutput('⚙️ Pyodide is still loading, please wait...');
+      return;
+    }
+
     setIsRunning(true);
-    setOutput('🚀 Running your code...\n');
+    setOutput('🚀 Running your Python code...\n');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const result = simulatePythonExecution(code);
-      setOutput(result);
-    } catch (error) {
-      setOutput(`❌ Oops! Something went wrong:\n${error instanceof Error ? error.message : 'Unknown error'}\n\nDon't worry, errors help us learn! 💪`);
+      // Capture print() output
+      let capturedOutput = '';
+      const pyodide = pyodideRef.current;
+      pyodide.setStdout({
+        batched: (text: string) => {
+          capturedOutput += text+'\n';
+        },
+      });
+      pyodide.setStderr({
+        batched: (text: string) => {
+          capturedOutput += `❌ ${text}`;
+        },
+      });
+
+      // Actually run the Python code
+      await pyodide.runPythonAsync(code);
+      setOutput(`✅ Success!\n\n${capturedOutput || '✅ Code ran successfully (no output).'}`);
+    } catch (error: any) {
+      setOutput(
+        `❌ Python Error:\n${error.message || error.toString()}\n\n💪 Remember: every error teaches you something new!`
+      );
     } finally {
       setIsRunning(false);
     }
@@ -52,200 +96,14 @@ print(f"{x} + {y} = {x + y}")
 print("Hello, World! 👋")
 print("I'm learning Python!")
 
-# Try creating variables
 name = "Code Explorer"
 age = 10
-
 print(f"My name is {name} and I'm {age} years old!")
-
-# Try some math
 x = 5
 y = 3
 print(f"{x} + {y} = {x + y}")
 `);
     setOutput('');
-  };
-
-  const simulatePythonExecution = (code: string): string => {
-    let output = '';
-    const variables: Record<string, any> = {};
-    
-    try {
-      const lines = code.split('\n').map(line => {
-        const commentIndex = line.indexOf('#');
-        return commentIndex >= 0 ? line.substring(0, commentIndex) : line;
-      }).filter(line => line.trim().length > 0);
-      
-      for (const line of lines) {
-        const trimmed = line.trim();
-        
-        if (trimmed.includes('input(')) {
-          const match = trimmed.match(/(\w+)\s*=\s*input\((.*)\)/);
-          if (match) {
-            const varName = match[1];
-            const prompt = match[2].replace(/['"]/g, '');
-            const simulatedInput = prompt.includes('name') ? 'Alex' : 
-                                  prompt.includes('age') ? '10' : 
-                                  prompt.includes('color') ? 'blue' : 
-                                  'example';
-            variables[varName] = simulatedInput;
-            output += `${prompt} ${simulatedInput}\n`;
-          }
-          continue;
-        }
-        
-        if (trimmed.includes('=') && !trimmed.includes('==') && !trimmed.startsWith('print')) {
-          const parts = trimmed.split('=');
-          if (parts.length >= 2) {
-            const varName = parts[0].trim();
-            const value = evaluateExpression(parts.slice(1).join('=').trim(), variables);
-            variables[varName] = value;
-          }
-          continue;
-        }
-        
-        if (trimmed.startsWith('print(')) {
-          const match = trimmed.match(/print\((.*)\)/);
-          if (match) {
-            const args = match[1];
-            const result = evaluateExpression(args, variables);
-            output += result + '\n';
-          }
-        }
-      }
-      
-      if (!output) {
-        output = '✅ Code executed successfully! (No output to display)\n';
-      }
-      
-      return '✅ Success!\n\n' + output;
-    } catch (error) {
-      return `❌ Error: ${error instanceof Error ? error.message : 'Something went wrong!'}\n\nDon't worry, errors help us learn! 💪\nTry checking your code for typos or missing quotes.`;
-    }
-  };
-
-  const evaluateExpression = (expr: string, variables: Record<string, any>): string => {
-    expr = expr.trim();
-    
-    if (expr.includes(',')) {
-      const parts: string[] = [];
-      let current = '';
-      let inString = false;
-      let stringChar = '';
-      
-      for (let i = 0; i < expr.length; i++) {
-        const char = expr[i];
-        if ((char === '"' || char === "'") && (i === 0 || expr[i-1] !== '\\')) {
-          if (!inString) {
-            inString = true;
-            stringChar = char;
-          } else if (char === stringChar) {
-            inString = false;
-          }
-        }
-        
-        if (char === ',' && !inString) {
-          parts.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      if (current) parts.push(current.trim());
-      
-      if (parts.length > 1) {
-        return parts.map(part => evaluateExpression(part, variables)).join(' ');
-      }
-    }
-    
-    if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
-      return expr.slice(1, -1);
-    }
-    
-    if (expr.startsWith('f"') || expr.startsWith("f'")) {
-      let str = expr.slice(2, -1);
-      const matches = str.match(/\{([^}]+)\}/g);
-      if (matches) {
-        matches.forEach(match => {
-          const varName = match.slice(1, -1);
-          const value = variables[varName] ?? varName;
-          str = str.replace(match, String(value));
-        });
-      }
-      return str;
-    }
-    
-    if (variables.hasOwnProperty(expr)) {
-      return String(variables[expr]);
-    }
-    
-    if (!isNaN(Number(expr))) {
-      return String(expr);
-    }
-    
-    if (expr.startsWith('int(')) {
-      const inner = expr.slice(4, -1);
-      const value = evaluateExpression(inner, variables);
-      return String(Math.floor(Number(value)));
-    }
-    
-    if (expr.startsWith('str(')) {
-      const inner = expr.slice(4, -1);
-      return evaluateExpression(inner, variables);
-    }
-    
-    if (expr.startsWith('len(')) {
-      const inner = expr.slice(4, -1);
-      const value = evaluateExpression(inner, variables);
-      return String(value.length);
-    }
-    
-    if (expr.includes('.upper()')) {
-      const varName = expr.replace('.upper()', '').trim();
-      const value = variables[varName] ?? varName;
-      return String(value).toUpperCase();
-    }
-    if (expr.includes('.lower()')) {
-      const varName = expr.replace('.lower()', '').trim();
-      const value = variables[varName] ?? varName;
-      return String(value).toLowerCase();
-    }
-    if (expr.includes('.title()')) {
-      const varName = expr.replace('.title()', '').trim();
-      const value = variables[varName] ?? varName;
-      return String(value).replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-    }
-    
-    try {
-      let evalExpr = expr;
-      Object.keys(variables).forEach(varName => {
-        const regex = new RegExp(`\\b${varName}\\b`, 'g');
-        evalExpr = evalExpr.replace(regex, String(variables[varName]));
-      });
-      
-      if (/^[\d\s+\-*/(). ]+$/.test(evalExpr)) {
-        const result = eval(evalExpr);
-        return String(result);
-      }
-    } catch {
-      // Continue to default return
-    }
-    
-    if (expr.includes('+') && !expr.match(/^\d+\s*\+/)) {
-      const parts = expr.split('+').map(part => {
-        const trimmed = part.trim();
-        if (trimmed.startsWith('"') || trimmed.startsWith("'")) {
-          return trimmed.slice(1, -1);
-        }
-        if (variables.hasOwnProperty(trimmed)) {
-          return String(variables[trimmed]);
-        }
-        return trimmed;
-      });
-      return parts.join('');
-    }
-    
-    return expr;
   };
 
   return (

@@ -29,8 +29,38 @@ for i in range(1, 16):
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
   const [showHints, setShowHints] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [pyodide, setPyodide] = useState<any>(null);
+  const [output, setOutput] = useState<string>("Loading Python environment...");
 
   const lineCount = code.split('\n').length;
+
+  useEffect(() => {
+    const loadPyodideInstance = async () => {
+      try {
+        // ✅ Inject script only once
+        if (!(window as any).loadPyodide) {
+          const script = document.createElement("script");
+          script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
+          script.async = true;
+          script.onload = async () => {
+            const py = await (window as any).loadPyodide();
+            setPyodide(py);
+            setOutput("✅ Python ready! Write your code and click Submit Challenge.");
+          };
+          document.body.appendChild(script);
+        } else {
+          const py = await (window as any).loadPyodide();
+          setPyodide(py);
+          setOutput("✅ Python ready! Write your code and click Submit Challenge.");
+        }
+      } catch (err) {
+        console.error("Failed to load Pyodide:", err);
+        setOutput("❌ Could not load Python environment.");
+      }
+    };
+
+    loadPyodideInstance();
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -46,9 +76,29 @@ for i in range(1, 16):
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
+    if (!pyodide) {
+      setOutput("⚙️ Loading Python environment...");
+      return;
+    }
+
     setHasRun(true);
-    // Calculate score based on time remaining and code quality
+    setOutput("▶ Running your code...\n");
+
+    try {
+      // Redirect stdout
+      pyodide.runPython(`
+  import io, sys
+  sys.stdout = io.StringIO()
+  `);
+
+      await pyodide.runPythonAsync(code);
+      const result = pyodide.runPython("sys.stdout.getvalue()");
+      setOutput(result || "✅ No output");
+    } catch (err: any) {
+      setOutput("❌ Error:\n" + err);
+    }
+
     const timeBonus = Math.floor(timeLeft / 10);
     const completionBonus = 100;
     setScore(timeBonus + completionBonus);
@@ -447,48 +497,10 @@ for i in range(1, 16):
             </div>
             
             {/* Test Console */}
-            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[300px]">
-              <div className="text-green-400 font-mono text-sm">
-                {!hasRun ? (
-                  <div className="text-gray-500">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span>▶</span>
-                      <span>Submit your challenge solution...</span>
-                    </div>
-                    <div className="text-blue-400 mt-4">
-                      ⏱️ Timer: {formatTime(timeLeft)}
-                    </div>
-                    <div className="w-2 h-4 bg-blue-400 animate-pulse inline-block mt-2"></div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-blue-400"># Running challenge tests...</div>
-                    <div className="mt-2 space-y-1">
-                      <div>1</div>
-                      <div>2</div>
-                      <div className="text-blue-400">Fizz</div>
-                      <div>4</div>
-                      <div className="text-purple-400">Buzz</div>
-                      <div className="text-blue-400">Fizz</div>
-                      <div>7</div>
-                      <div>8</div>
-                      <div className="text-blue-400">Fizz</div>
-                      <div className="text-purple-400">Buzz</div>
-                      <div>11</div>
-                      <div className="text-blue-400">Fizz</div>
-                      <div>13</div>
-                      <div>14</div>
-                      <div className="text-red-400">FizzBuzz</div>
-                    </div>
-                    <div className="mt-4 text-gray-500">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        <span>All tests passed! 🎉</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[300px] overflow-y-auto">
+              <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap">
+                {output || "💡 Write your code and click Submit Challenge!"}
+              </pre>
             </div>
 
             {hasRun && (
