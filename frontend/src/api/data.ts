@@ -1,4 +1,5 @@
 // Mock API Data for LeetCode for Kids Platform
+import { newChallengesData, newQuizzesData } from './challenges-quizzes-data-fixed';
 
 export interface Course {
   id: string;
@@ -65,6 +66,7 @@ export interface TestCase {
 
 export interface Challenge {
   id: string;
+  moduleId: string;
   title: string;
   description: string;
   timeLimit: number; // in seconds
@@ -1309,11 +1311,21 @@ print("Wow! " + color.title() + " is an awesome color!")`,
 ];
 
 // ==================== CHALLENGES DATA ====================
-export const challengesData: Challenge[] = [
+// Each module has exactly ONE unique challenge
+export const challengesData: Challenge[] = newChallengesData;
+
+// ==================== QUIZ DATA ====================
+// Each module has exactly 3 quizzes
+export const quizzesData: Quiz[] = newQuizzesData;
+
+// OLD CODE BELOW - TO BE REMOVED
+/*
+  // MODULE 1: Getting Started with Python
   {
-    id: 'challenge-1',
-    title: 'The Math Magician',
-    description: 'Create a program that asks for two numbers and shows their sum, difference, and product!',
+    id: 'challenge-m1',
+    moduleId: 'module-1',
+    title: 'Personal Introduction Generator',
+    description: 'Create a program that asks for your name, age, and favorite hobby, then prints a fun introduction about yourself!',
     timeLimit: 300,
     difficulty: 'easy',
     points: 100,
@@ -1370,53 +1382,7 @@ print(story)`,
     ]
   }
 ];
-
-// ==================== QUIZ DATA ====================
-export const quizzesData: Quiz[] = [
-  {
-    id: 'quiz-1',
-    moduleId: 'module-2',
-    title: 'Variables and Data Types Quiz',
-    timeLimit: 600,
-    questions: [
-      {
-        id: 'q1',
-        question: 'What symbol do we use to assign a value to a variable in Python?',
-        options: ['=', '==', ':', '->'],
-        correctAnswer: 0,
-        explanation: 'We use the single equals sign (=) to assign values to variables. The double equals (==) is used for comparing values.'
-      },
-      {
-        id: 'q2',
-        question: 'Which of these is a valid variable name in Python?',
-        options: ['2cool', 'my-variable', 'my_age', 'my variable'],
-        correctAnswer: 2,
-        explanation: 'Variable names can contain letters, numbers, and underscores, but cannot start with a number or contain spaces or hyphens.'
-      },
-      {
-        id: 'q3',
-        question: 'What type of data is "Hello, World!"?',
-        options: ['Integer', 'String', 'Float', 'Boolean'],
-        correctAnswer: 1,
-        explanation: 'Text in quotes is called a string. It can contain letters, numbers, and symbols.'
-      },
-      {
-        id: 'q4',
-        question: 'What will this code print? x = 5 + 3',
-        options: ['5 + 3', '8', 'x', 'Error'],
-        correctAnswer: 1,
-        explanation: 'Python calculates 5 + 3 and stores the result (8) in the variable x.'
-      },
-      {
-        id: 'q5',
-        question: 'How do you combine two strings together?',
-        options: ['Using the + symbol', 'Using the * symbol', 'Using the - symbol', 'Using the / symbol'],
-        correctAnswer: 0,
-        explanation: 'The + operator combines (concatenates) strings together. For example: "Hello" + "World" becomes "HelloWorld".'
-      }
-    ]
-  }
-];
+*/
 
 // ==================== FEATURES DATA ====================
 export const featuresData: Feature[] = [
@@ -1651,6 +1617,18 @@ export const getChallenges = (): Promise<Challenge[]> => {
 export const getChallengeById = (id: string): Promise<Challenge | undefined> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(challengesData.find(c => c.id === id)), 100);
+  });
+};
+
+export const getChallengeByModuleId = (moduleId: string): Promise<Challenge | undefined> => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(challengesData.find(c => c.moduleId === moduleId)), 100);
+  });
+};
+
+export const getQuizzesByModuleId = (moduleId: string): Promise<Quiz[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(quizzesData.filter(q => q.moduleId === moduleId)), 100);
   });
 };
 
