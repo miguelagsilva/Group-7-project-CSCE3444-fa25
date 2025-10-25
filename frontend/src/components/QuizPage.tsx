@@ -9,6 +9,9 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 interface QuizPageProps {
   onBack: () => void;
   onProgressClick?: () => void;
+  onLearnClick?: () => void;
+  onFreeCodeClick?: () => void;
+  onChallengeClick?: () => void;
 }
 
 interface QuizQuestion {
@@ -56,7 +59,7 @@ const quizQuestions: QuizQuestion[] = [
   }
 ];
 
-export function QuizPage({ onBack, onProgressClick }: QuizPageProps) {
+export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClick, onChallengeClick }: QuizPageProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -196,16 +199,31 @@ export function QuizPage({ onBack, onProgressClick }: QuizPageProps) {
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-2xl p-2 shadow-lg">
             <div className="flex space-x-2">
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onLearnClick}
+              >
                 Learn
               </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
-                Practice
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onFreeCodeClick}
+              >
+                Free Code
               </Button>
-              <Button variant="ghost" className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50">
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                onClick={onChallengeClick}
+              >
                 Challenge
               </Button>
-              <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium">
+              <Button 
+                variant="ghost" 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600"
+              >
                 Quiz
               </Button>
               <Button 

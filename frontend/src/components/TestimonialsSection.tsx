@@ -1,37 +1,24 @@
+import { useState, useEffect } from "react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Star, Quote } from "lucide-react";
+import { getTestimonials, Testimonial } from "../api/data";
 
 export function TestimonialsSection() {
-  const testimonials = [
-    {
-      name: "Emma, age 9",
-      text: "I love making my characters dance and jump around! LeetCode for Kids makes me feel like a real programmer!",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1525829528215-ffae12a76ac8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYXBweSUyMGtpZHMlMjB0ZWNobm9sb2d5JTIwbGVhcm5pbmd8ZW58MXx8fHwxNzU4NzcwMjAzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      color: "bg-pink-100 border-pink-200"
-    },
-    {
-      name: "Alex's Mom",
-      text: "Alex has been coding for 3 months now and created his first game! The progress tracking helps me see how much he's learning.",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1603354350317-6f7aaa5911c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraWRzJTIwY29kaW5nJTIwcHJvZ3JhbW1pbmclMjBjaGlsZHJlbnxlbnwxfHx8fDE3NTg3Njk4Mjl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      color: "bg-blue-100 border-blue-200"
-    },
-    {
-      name: "Mia, age 12",
-      text: "I built my own website about my pet hamster! My friends think I'm a coding genius now. Thanks LeetCode for Kids!",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1674049406486-4b1f6e1845fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNsYXB0b3AlMjBwcm9ncmFtbWluZyUyMGtpZHMlMjBsZWFybmluZ3xlbnwxfHx8fDE3NTg3Njk4MzN8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      color: "bg-green-100 border-green-200"
-    },
-    {
-      name: "David's Dad", 
-      text: "Finally found a platform that keeps David engaged! The gamified approach is brilliant and he's actually learning real skills.",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1505976442149-53a82393903b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraWRzJTIwbGVhcm5pbmclMjBjb21wdXRlciUyMGdhbWVzfGVufDF8fHx8MTc1ODc3MDE5Nnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
-      color: "bg-purple-100 border-purple-200"
-    }
-  ];
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    getTestimonials().then(setTestimonials);
+  }, []);
+
+  const getColorForIndex = (index: number) => {
+    const colors = [
+      "bg-pink-100 border-pink-200",
+      "bg-blue-100 border-blue-200",
+      "bg-green-100 border-green-200",
+      "bg-purple-100 border-purple-200"
+    ];
+    return colors[index % colors.length];
+  };
 
   return (
     <section className="relative py-20 overflow-hidden">
@@ -64,45 +51,50 @@ export function TestimonialsSection() {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div 
-              key={index}
-              className={`${testimonial.color} p-8 rounded-3xl border-2 transform hover:scale-105 transition-all duration-300 ${
-                index % 2 === 0 ? 'rotate-1 hover:rotate-0' : '-rotate-1 hover:rotate-0'
-              }`}
-            >
-              <div className="flex items-start space-x-4">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-lg">
-                    <ImageWithFallback 
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="absolute -top-2 -right-2 bg-white p-1 rounded-full">
-                    <Quote className="w-4 h-4 text-blue-600" />
-                  </div>
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center space-x-1 mb-3">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                    ))}
+          {testimonials.map((testimonial, index) => {
+            const avatarImages = [
+              "https://images.unsplash.com/photo-1525829528215-ffae12a76ac8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYXBweSUyMGtpZHMlMjB0ZWNobm9sb2d5JTIwbGVhcm5pbmd8ZW58MXx8fHwxNzYwNDU1NjE4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+              "https://images.unsplash.com/photo-1603354350317-6f7aaa5911c5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraWRzJTIwY29kaW5nJTIwcHJvZ3JhbW1pbmclMjBjaGlsZHJlbnxlbnwxfHx8fDE3NjA0NTU2MTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+              "https://images.unsplash.com/photo-1674049406486-4b1f6e1845fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsYXB0b3AlMjBwcm9ncmFtbWluZyUyMGtpZHMlMjBsZWFybmluZ3xlbnwxfHx8fDE3NjA0NTU2MTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+              "https://images.unsplash.com/photo-1505976442149-53a82393903b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraWRzJTIwbGVhcm5pbmclMjBjb21wdXRlciUyMGdhbWVzfGVufDF8fHx8MTc2MDQ1NTY2OHww&ixlib=rb-4.1.0&q=80&w=1080"
+            ];
+
+            return (
+              <div 
+                key={index}
+                className={`${getColorForIndex(index)} p-8 rounded-3xl border-2 transform hover:scale-105 transition-all duration-300 ${
+                  index % 2 === 0 ? 'rotate-1 hover:rotate-0' : '-rotate-1 hover:rotate-0'
+                }`}
+              >
+                <div className="flex items-start space-x-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center border-4 border-white shadow-lg bg-gradient-to-br from-blue-400 to-blue-600">
+                      <span className="text-2xl">{testimonial.avatar}</span>
+                    </div>
+                    <div className="absolute -top-2 -right-2 bg-white p-1 rounded-full">
+                      <Quote className="w-4 h-4 text-blue-600" />
+                    </div>
                   </div>
                   
-                  <p className="text-gray-800 text-lg mb-4 italic">
-                    "{testimonial.text}"
-                  </p>
-                  
-                  <p className="text-gray-600 font-bold">
-                    - {testimonial.name}
-                  </p>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-1 mb-3">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    
+                    <p className="text-gray-800 text-lg mb-4 italic">
+                      "{testimonial.text}"
+                    </p>
+                    
+                    <p className="text-gray-600 font-bold">
+                      - {testimonial.name}, age {testimonial.age}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
         {/* Bottom decorative wave */}
