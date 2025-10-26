@@ -111,4 +111,20 @@ export function CoursesSection({ onNavigateToModules }: CoursesSectionProps) {
                     }`}
                     disabled={!course.available}
                   >
-                    {course.available ? 'Start Lear
+                    {course.available ? 'Start Learning' : 'Coming Soon'}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="text-center mt-12">
+          <Button className="bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 rounded-xl">
+            View All Courses
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
