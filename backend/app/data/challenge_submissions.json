@@ -1,0 +1,20 @@
+[
+  {
+    "challenge_id": 1,
+    "user_id": "test_user",
+    "code": "print('Hello World')",
+    "score": 0.0,
+    "passed_tests": 0,
+    "total_tests": 1,
+    "test_results": [
+      {
+        "test_case": 1,
+        "input": "Alex, 10, play soccer",
+        "expected_output": "Hi! My name is Alex\\nI am 10 years old\\nI love to play soccer !\\nNice to meet you! \u00f0\u0178\u017d\u2030",
+        "actual_output": "Hi! My name is Alex\\nI am 10 years old\\nI love to play soccer !\\nNice to meet you!",
+        "passed": false
+      }
+    ],
+    "timestamp": "2025-10-26T21:17:14.600117"
+  }
+]

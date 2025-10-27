@@ -269,3 +269,192 @@ def get_user_quiz_summary(user_id):
     except Exception as e:
         return jsonify({"error": f"Failed to retrieve quiz summary: {str(e)}"}), 500
 
+# --- Challenge Test Cases Integration Endpoints ---
+
+@main.route('/challenges/<int:challenge_id>/test-cases', methods=['GET'])
+def get_challenge_test_cases(challenge_id):
+    """
+    Endpoint to get test cases for a specific challenge.
+    Returns the test cases that will be used to validate user submissions.
+    """
+    try:
+        # Load challenge data
+        challenges_data = load_data_from_file('challenges.json')
+        challenge = next((c for c in challenges_data if c.get('id') == challenge_id), None)
+        
+        if not challenge:
+            return jsonify({"error": "Challenge not found"}), 404
+        
+        # Return test cases (without expected outputs for security)
+        test_cases = []
+        for test_case in challenge.get('testCases', []):
+            test_cases.append({
+                'input': test_case.get('input', ''),
+                'description': test_case.get('description', '')
+            })
+        
+        return jsonify({
+            'challenge_id': challenge_id,
+            'title': challenge.get('title', ''),
+            'test_cases': test_cases,
+            'time_limit': challenge.get('timeLimit', 300)
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to retrieve test cases: {str(e)}"}), 500
+
+@main.route('/challenges/<int:challenge_id>/validate', methods=['POST'])
+def validate_challenge_submission(challenge_id):
+    """
+    Endpoint to validate a challenge submission against test cases.
+    Expects JSON with user_id, code, and execution_results.
+    """
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['user_id', 'code', 'execution_results']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+        user_id = data['user_id']
+        code = data['code']
+        execution_results = data['execution_results']
+        
+        # Load challenge data
+        challenges_data = load_data_from_file('challenges.json')
+        challenge = next((c for c in challenges_data if c.get('id') == challenge_id), None)
+        
+        if not challenge:
+            return jsonify({"error": "Challenge not found"}), 404
+        
+        # Validate against test cases
+        test_cases = challenge.get('testCases', [])
+        passed_tests = 0
+        total_tests = len(test_cases)
+        test_results = []
+        
+        for i, test_case in enumerate(test_cases):
+            expected_output = test_case.get('expectedOutput', '')
+            actual_output = execution_results.get(f'test_{i}', '')
+            
+            # Normalize outputs for comparison (remove extra whitespace, newlines)
+            expected_normalized = expected_output.strip().replace('\r\n', '\n').replace('\r', '\n')
+            actual_normalized = actual_output.strip().replace('\r\n', '\n').replace('\r', '\n')
+            
+            is_passed = expected_normalized == actual_normalized
+            
+            if is_passed:
+                passed_tests += 1
+            
+            test_results.append({
+                'test_case': i + 1,
+                'input': test_case.get('input', ''),
+                'expected_output': expected_output,
+                'actual_output': actual_output,
+                'passed': is_passed
+            })
+        
+        # Calculate score
+        score = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
+        
+        # Create submission record
+        submission_record = {
+            'challenge_id': challenge_id,
+            'user_id': user_id,
+            'code': code,
+            'score': round(score, 2),
+            'passed_tests': passed_tests,
+            'total_tests': total_tests,
+            'test_results': test_results,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Store submission in JSON file (in production, this would be a database)
+        submissions_file = os.path.join('app', 'data', 'challenge_submissions.json')
+        
+        # Load existing submissions
+        try:
+            with open(submissions_file, 'r') as f:
+                all_submissions = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            all_submissions = []
+        
+        # Add new submission
+        all_submissions.append(submission_record)
+        
+        # Save updated submissions
+        with open(submissions_file, 'w') as f:
+            json.dump(all_submissions, f, indent=2)
+        
+        return jsonify({
+            'message': 'Challenge submission validated successfully',
+            'score': round(score, 2),
+            'passed_tests': passed_tests,
+            'total_tests': total_tests,
+            'test_results': test_results,
+            'submission_id': len(all_submissions) - 1
+        }), 201
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to validate challenge submission: {str(e)}"}), 500
+
+@main.route('/challenges/<int:challenge_id>/submissions/<user_id>', methods=['GET'])
+def get_user_challenge_submissions(challenge_id, user_id):
+    """
+    Endpoint to get all submissions for a specific challenge by a specific user.
+    """
+    try:
+        submissions_file = os.path.join('app', 'data', 'challenge_submissions.json')
+        
+        # Load submissions data
+        try:
+            with open(submissions_file, 'r') as f:
+                all_submissions = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify([])
+        
+        # Filter submissions for the specific challenge and user
+        user_submissions = [
+            s for s in all_submissions 
+            if s.get('challenge_id') == challenge_id and s.get('user_id') == user_id
+        ]
+        
+        # Add challenge title for better frontend display
+        challenges_data = load_data_from_file('challenges.json')
+        challenge = next((c for c in challenges_data if c.get('id') == challenge_id), None)
+        if challenge:
+            for submission in user_submissions:
+                submission['challenge_title'] = challenge['title']
+                submission['module_id'] = challenge.get('module_id')
+        
+        return jsonify(user_submissions)
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to retrieve challenge submissions: {str(e)}"}), 500
+
+@main.route('/challenges/<int:challenge_id>/solution', methods=['GET'])
+def get_challenge_solution(challenge_id):
+    """
+    Endpoint to get the solution for a specific challenge.
+    This will be used by the Solution Module feature.
+    """
+    try:
+        challenges_data = load_data_from_file('challenges.json')
+        challenge = next((c for c in challenges_data if c.get('id') == challenge_id), None)
+        
+        if not challenge:
+            return jsonify({"error": "Challenge not found"}), 404
+        
+        return jsonify({
+            'challenge_id': challenge_id,
+            'title': challenge.get('title', ''),
+            'solution': challenge.get('solution', ''),
+            'explanation': challenge.get('explanation', ''),
+            'difficulty': challenge.get('difficulty', 'medium')
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to retrieve challenge solution: {str(e)}"}), 500
+
