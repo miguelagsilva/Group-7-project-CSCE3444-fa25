@@ -4,6 +4,8 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newChallengesData } from '../api/challenges-quizzes-data-fixed';
+import { challengeAPI, handleAPIError } from '../api/apiService';
+import { SolutionDisplay } from './SolutionDisplay';
 
 interface ChallengePageProps {
   moduleId: string;
@@ -26,6 +28,11 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     currentChallenge?.difficulty === 'hard' ? 'Hard' : 'Medium'
   );
   const [showHints, setShowHints] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [backendScore, setBackendScore] = useState(0);
+  const [testResults, setTestResults] = useState<any[]>([]);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Update code when moduleId changes
@@ -75,12 +82,47 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     setHasRun(true);
-    // Calculate score based on time remaining and code quality
-    const timeBonus = Math.floor(timeLeft / 10);
-    const completionBonus = 100;
-    setScore(timeBonus + completionBonus);
+    setIsValidating(true);
+    setValidationError(null);
+    
+    try {
+      // For now, we'll simulate execution results
+      // In a real implementation, this would come from Miguel's Python execution
+      const executionResults = {
+        test_0: "Hi! My name is Alex\nI am 10 years old\nI love to play soccer !\nNice to meet you!"
+      };
+      
+      // Get challenge ID (convert moduleId to challenge ID)
+      const challengeId = parseInt(moduleId.replace('module-', ''));
+      
+      // Validate with backend
+      const validationResult = await challengeAPI.validateSubmission(challengeId, {
+        user_id: 'demo_user',
+        code: code,
+        execution_results: executionResults
+      });
+      
+      setBackendScore(validationResult.score);
+      setTestResults(validationResult.test_results);
+      
+      // Show solution if score is low
+      if (validationResult.score < 80) {
+        setTimeout(() => {
+          setShowSolution(true);
+        }, 2000);
+      }
+      
+    } catch (error) {
+      setValidationError(handleAPIError(error as Error).error);
+      // Fallback to local scoring
+      const timeBonus = Math.floor(timeLeft / 10);
+      const completionBonus = 100;
+      setScore(timeBonus + completionBonus);
+    } finally {
+      setIsValidating(false);
+    }
   };
 
   const handleCopyCode = () => {
@@ -431,10 +473,15 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                 </Button>
                 <Button 
                   onClick={handleRunCode}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200"
+                  disabled={hasRun || isValidating}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Play className="w-5 h-5" />
-                  <span>Submit Challenge</span>
+                  <span>
+                    {isValidating ? 'Validating...' : 
+                     hasRun ? 'Submitted!' : 
+                     'Submit Challenge'}
+                  </span>
                 </Button>
               </div>
             </div>
@@ -501,10 +548,37 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                   <span className="font-semibold text-lg">Challenge Complete! 🏆</span>
                 </div>
                 <div className="text-gray-700 text-sm mb-4">
-                  <div className="font-semibold">Final Score: {score} points</div>
+                  <div className="font-semibold">Backend Score: {backendScore}%</div>
+                  <div className="font-semibold">Local Score: {score} points</div>
                   <div>Time Bonus: {Math.floor(timeLeft / 10)} pts</div>
+                  {validationError && (
+                    <div className="text-red-600 text-xs mt-2">
+                      Backend Error: {validationError}
+                    </div>
+                  )}
                 </div>
                 <div className="flex space-x-3">
+                  <Button 
+                    onClick={() => {
+                      // Reset challenge state
+                      setHasRun(false);
+                      setScore(0);
+                      setBackendScore(0);
+                      setTestResults([]);
+                      setValidationError(null);
+                      setIsValidating(false);
+                      setShowSolution(false);
+                      // Reset code to starter code
+                      if (currentChallenge) {
+                        setCode(currentChallenge.starterCode);
+                      }
+                      // Reset timer
+                      setTimeLeft(currentChallenge?.timeLimit || 900);
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm"
+                  >
+                    Try Again
+                  </Button>
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm">
                     Next Challenge →
                   </Button>
@@ -529,6 +603,31 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
           </div>
         </div>
       </div>
+      
+      {/* Solution Display Modal */}
+      <SolutionDisplay
+        challengeId={parseInt(moduleId.replace('module-', ''))}
+        isOpen={showSolution}
+        onClose={() => setShowSolution(false)}
+        onTryAgain={() => {
+          // Reset challenge state
+          setHasRun(false);
+          setScore(0);
+          setBackendScore(0);
+          setTestResults([]);
+          setValidationError(null);
+          setIsValidating(false);
+          setShowSolution(false);
+          // Reset code to starter code
+          if (currentChallenge) {
+            setCode(currentChallenge.starterCode);
+          }
+          // Reset timer
+          setTimeLeft(currentChallenge?.timeLimit || 900);
+        }}
+        userScore={backendScore}
+        maxScore={100}
+      />
     </div>
   );
 }

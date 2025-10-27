@@ -3,6 +3,8 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { modulesData } from '../api/data';
+import { useState, useEffect } from 'react';
+import { quizAPI, challengeAPI, handleAPIError } from '../api/apiService';
 
 interface ProgressPageProps {
   onBack: () => void;
@@ -11,17 +13,82 @@ interface ProgressPageProps {
 }
 
 export function ProgressPage({ onBack, onLearnClick, onFreeCodeClick }: ProgressPageProps) {
-  // Calculate overall progress from module data
-  const totalModules = modulesData.length;
-  const totalProgress = modulesData.reduce((sum, module) => sum + module.progress, 0);
+  const [quizProgress, setQuizProgress] = useState<any[]>([]);
+  const [challengeProgress, setChallengeProgress] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch progress data from backend
+  useEffect(() => {
+    const fetchProgressData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch quiz progress for demo user
+        const quizData = await quizAPI.getUserProgress('demo_user');
+        setQuizProgress(quizData);
+        
+        // Fetch challenge submissions for demo user
+        const challengeData = await challengeAPI.getUserSubmissions(1, 'demo_user');
+        setChallengeProgress(challengeData);
+        
+      } catch (err) {
+        setError(handleAPIError(err as Error).error);
+        console.error('Failed to fetch progress data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgressData();
+  }, []);
+
+  // Calculate real progress from backend data
+  const calculateRealProgress = () => {
+    const completedQuizzes = quizProgress.filter(q => q.score >= 80).length;
+    const completedChallenges = challengeProgress.filter(c => c.score >= 80).length;
+    
+    // Calculate module progress based on activities
+    const enhancedModules = modulesData.map(module => {
+      const moduleId = parseInt(module.id.replace('module-', ''));
+      
+      // Check if user has completed quiz for this module
+      const hasCompletedQuiz = quizProgress.some(q => q.quiz_id === moduleId && q.score >= 80);
+      
+      // Check if user has completed challenge for this module
+      const hasCompletedChallenge = challengeProgress.some(c => c.challenge_id === moduleId && c.score >= 80);
+      
+      // Calculate progress: 50% for quiz, 50% for challenge
+      let progress = 0;
+      if (hasCompletedQuiz) progress += 50;
+      if (hasCompletedChallenge) progress += 50;
+      
+      return {
+        ...module,
+        progress,
+        completed: progress === 100,
+        hasQuiz: hasCompletedQuiz,
+        hasChallenge: hasCompletedChallenge
+      };
+    });
+    
+    return enhancedModules;
+  };
+
+  const enhancedModules = calculateRealProgress();
+  
+  // Calculate overall progress from enhanced modules
+  const totalModules = enhancedModules.length;
+  const totalProgress = enhancedModules.reduce((sum, module) => sum + module.progress, 0);
   const overallProgress = Math.round(totalProgress / totalModules);
   
   // Find current module (first incomplete module with some progress, or first incomplete)
-  const currentModule = modulesData.find(m => !m.completed && m.progress > 0) || modulesData.find(m => !m.completed);
-  const completedModules = modulesData.filter(m => m.completed);
+  const currentModule = enhancedModules.find(m => !m.completed && m.progress > 0) || enhancedModules.find(m => !m.completed);
+  const completedModules = enhancedModules.filter(m => m.completed);
   
   // Get exactly the first 4 modules for the journey visualization
-  const journeyModules = modulesData.slice(0, 4);
+  const journeyModules = enhancedModules.slice(0, 4);
   
   // Helper function to get short name
   const getShortName = (title: string) => {
@@ -37,6 +104,28 @@ export function ProgressPage({ onBack, onLearnClick, onFreeCodeClick }: Progress
   };
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 relative overflow-hidden">
+      {/* Loading State */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your progress...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-md">
+            <div className="text-red-600 mb-4">❌ Error loading progress</div>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
       {/* Wavy background layers matching landing page */}
       <div className="absolute inset-x-0 bottom-0">
         {/* First wave layer */}
@@ -317,7 +406,7 @@ export function ProgressPage({ onBack, onLearnClick, onFreeCodeClick }: Progress
             <Card className="p-6 rounded-3xl shadow-lg mb-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">Module Progress</h2>
               <div className="space-y-3">
-                {modulesData.map((module, index) => {
+                {enhancedModules.map((module, index) => {
                   const isCompleted = module.completed;
                   const isInProgress = !module.completed && module.progress > 0;
                   const isUpNext = !isCompleted && !isInProgress && index === completedModules.length + (currentModule ? 1 : 0);
@@ -363,15 +452,28 @@ export function ProgressPage({ onBack, onLearnClick, onFreeCodeClick }: Progress
                               : 'text-gray-500'
                           }`}>
                             {isCompleted
-                              ? 'All lessons completed!'
+                              ? 'All activities completed!'
                               : isInProgress
                               ? 'Currently learning...'
                               : isUpNext
                               ? 'Up next!'
-                              : index === modulesData.length - 1
+                              : index === enhancedModules.length - 1
                               ? 'Final module!'
                               : 'Coming soon'}
                           </p>
+                          {/* Activity Indicators */}
+                          <div className="flex space-x-2 mt-1">
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              module.hasQuiz ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              Quiz {module.hasQuiz ? '✓' : '○'}
+                            </span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              module.hasChallenge ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              Challenge {module.hasChallenge ? '✓' : '○'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div
@@ -396,18 +498,22 @@ export function ProgressPage({ onBack, onLearnClick, onFreeCodeClick }: Progress
             {/* Detailed Progress Stats */}
             <Card className="p-6 rounded-3xl shadow-lg max-w-2xl mx-auto">
               <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">Course Statistics</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-green-50 rounded-xl">
                   <div className="text-3xl font-bold text-green-600">{completedModules.length}</div>
-                  <div className="text-sm text-gray-600 mt-1">Completed</div>
+                  <div className="text-sm text-gray-600 mt-1">Modules Complete</div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-xl">
-                  <div className="text-3xl font-bold text-blue-600">{currentModule ? '1' : '0'}</div>
-                  <div className="text-sm text-gray-600 mt-1">In Progress</div>
+                  <div className="text-3xl font-bold text-blue-600">{quizProgress.filter(q => q.score >= 80).length}</div>
+                  <div className="text-sm text-gray-600 mt-1">Quizzes Passed</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-xl">
+                  <div className="text-3xl font-bold text-purple-600">{challengeProgress.filter(c => c.score >= 80).length}</div>
+                  <div className="text-sm text-gray-600 mt-1">Challenges Solved</div>
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-xl">
                   <div className="text-3xl font-bold text-gray-600">{totalModules - completedModules.length - (currentModule ? 1 : 0)}</div>
-                  <div className="text-sm text-gray-600 mt-1">Remaining</div>
+                  <div className="text-sm text-gray-600 mt-1">Modules Remaining</div>
                 </div>
               </div>
             </Card>
