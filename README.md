@@ -24,10 +24,16 @@ https://trello.com/b/BnjQRkx7/group-7-project-csce3444-fa25
     python3 -m pip install -r requirements.txt
     ```
 3. Run the Flask application:
+   - Development
    ```bash
    python3 flask run
    ```
+   - Production (using Gunicorn) 
+   ```bash
+   gunicorn -w 4 "run:app"
+   ```
 4. The backend server will start running at `http://127.0.0.1:5000/`.
+
 ### Frontend
 0. Requirements:
    - Node.js v24.x or higher
@@ -41,8 +47,13 @@ https://trello.com/b/BnjQRkx7/group-7-project-csce3444-fa25
      npm install
      ```
 3. Start the React application:
+   - Development
     ```bash
      npm run dev
+     ```
+   - Production
+    ```bash
+     npm run build
      ```
      
 
