@@ -8,6 +8,7 @@ jobs:
   deploy:
     name: Deploy Flask App to EC2
     runs-on: ubuntu-latest
+    environment: ec2
 
     steps:
       - name: Checkout code
