@@ -101,3 +101,4 @@ export const handleAPIError = (error: Error) => {
     error: error.message
   };
 };
+
