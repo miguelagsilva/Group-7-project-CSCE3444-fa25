@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Search, CheckCircle, Clock, BarChart3, FileText, GitBranch, RotateCcw, ShoppingCart, Zap } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, BarChart3, FileText, GitBranch, RotateCcw, ShoppingCart, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 import { getModulesByCourseId, Module } from '../api/data';
 
@@ -145,33 +145,31 @@ export function ModulesPage({ onBack, onModuleClick, onProgressClick, onFreeCode
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center space-x-6">
+          {/* Left: Back Button */}
+          <div className="flex items-center">
             <Button 
               onClick={onBack}
-              className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg text-lg"
+              className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-4 rounded-2xl shadow-lg text-lg flex items-center gap-2"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5" />
+              Go back
             </Button>
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 p-3 rounded-xl">
-                <Zap className="w-8 h-8 text-white" />
-              </div>
-              <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
-            </div>
           </div>
           
-          {/* Course Title in Center */}
-          <div className="flex items-center space-x-3">
-     
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide mr-50">
+          {/* Center: Course Title */}
+          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
               PYTHON <span className="text-blue-600">ADVENTURES</span>
             </h1>
-      
           </div>
           
-          <Button className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg">
-            <Search className="w-6 h-6" />
-          </Button>
+          {/* Right: Logo */}
+          <div className="flex items-center space-x-4">
+            <div className="bg-blue-600 p-3 rounded-xl">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
+          </div>
         </div>
 
         {/* Navigation Tabs */}

@@ -5,6 +5,7 @@ import { FeaturesSection } from "./components/FeaturesSection";
 import { CoursesSection } from "./components/CoursesSection";
 import { TestimonialsSection } from "./components/TestimonialsSection";
 import { Footer } from "./components/Footer";
+import { DashboardLanding } from "./components/DashboardLanding";
 import { ModulesPage } from "./components/ModulesPage";
 import { ModuleDetailPage } from "./components/ModuleDetailPage";
 import { ProgressPage } from "./components/ProgressPage";
@@ -13,8 +14,12 @@ import { ChallengePage } from "./components/ChallengePage";
 import { QuizPage } from "./components/QuizPage";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'modules' | 'module-detail' | 'progress' | 'freecode' | 'challenge' | 'quiz'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'modules' | 'module-detail' | 'progress' | 'freecode' | 'challenge' | 'quiz'>('landing');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('module-2');
+
+  const navigateToDashboard = () => {
+    setCurrentPage('dashboard');
+  };
 
   const navigateToModules = () => {
     setCurrentPage('modules');
@@ -51,38 +56,40 @@ export default function App() {
     setCurrentPage('modules');
   };
 
+  const navigateBackToDashboard = () => {
+    setCurrentPage('dashboard');
+  };
+
   if (currentPage === 'quiz') {
     return <QuizPage 
-      onBack={navigateToModuleDetail} 
-      onProgressClick={navigateToProgress}
-      onLearnClick={navigateBackToModules}
-      onFreeCodeClick={navigateToFreeCode}
+      moduleId={selectedModuleId}
+      onBack={() => navigateToModuleDetail(selectedModuleId)} 
+      onLearnClick={() => navigateToModuleDetail(selectedModuleId)}
       onChallengeClick={navigateToChallenge}
     />;
   }
 
   if (currentPage === 'challenge') {
     return <ChallengePage 
-      onBack={navigateToModuleDetail} 
-      onProgressClick={navigateToProgress}
-      onLearnClick={navigateBackToModules}
-      onFreeCodeClick={navigateToFreeCode}
+      moduleId={selectedModuleId}
+      onBack={() => navigateToModuleDetail(selectedModuleId)} 
+      onLearnClick={() => navigateToModuleDetail(selectedModuleId)}
       onQuizClick={navigateToQuiz}
     />;
   }
 
   if (currentPage === 'freecode') {
     return <FreeCodePage 
-      onBack={navigateBackToModules} 
+      onBack={navigateBackToDashboard} 
       onProgressClick={navigateToProgress}
-      onLearnClick={navigateBackToModules}
+      onLearnClick={navigateBackToDashboard}
     />;
   }
 
   if (currentPage === 'progress') {
     return <ProgressPage 
-      onBack={navigateBackToModules}
-      onLearnClick={navigateBackToModules}
+      onBack={navigateBackToDashboard}
+      onLearnClick={navigateBackToDashboard}
       onFreeCodeClick={navigateToFreeCode}
     />;
   }
@@ -91,32 +98,48 @@ export default function App() {
     return <ModuleDetailPage 
       moduleId={selectedModuleId}
       onBack={navigateBackToModules} 
-      onProgressClick={navigateToProgress} 
-      onFreeCodeClick={navigateToFreeCode} 
       onChallengeClick={navigateToChallenge} 
       onQuizClick={navigateToQuiz} 
     />;
   }
 
+  if (currentPage === 'dashboard') {
+    return (
+      <>
+        <Header 
+          onNavigateToModules={navigateToModules} 
+          onNavigateToProgress={navigateToProgress}
+          onNavigateToHome={navigateToLanding}
+        />
+        <DashboardLanding
+          onStartLearning={navigateToModules}
+          onFreeCodeClick={navigateToFreeCode}
+          onProgressClick={navigateToProgress}
+        />
+      </>
+    );
+  }
+
   if (currentPage === 'modules') {
     return <ModulesPage 
-      onBack={navigateToLanding} 
+      onBack={navigateToDashboard} 
       onModuleClick={navigateToModuleDetail} 
       onProgressClick={navigateToProgress}
       onFreeCodeClick={navigateToFreeCode}
     />;
   }
 
+  // Landing page (marketing page)
   return (
     <div className="min-h-screen bg-white">
       <Header 
-        onNavigateToModules={navigateToModules} 
-        onNavigateToProgress={navigateToProgress}
+        onNavigateToModules={navigateToDashboard} 
+        onNavigateToProgress={navigateToDashboard}
         onNavigateToHome={navigateToLanding}
       />
-      <HeroSection onNavigateToModules={navigateToModules} />
+      <HeroSection onNavigateToModules={navigateToDashboard} />
       <FeaturesSection />
-      <CoursesSection onNavigateToModules={navigateToModules} />
+      <CoursesSection onNavigateToModules={navigateToDashboard} />
       <TestimonialsSection />
       <Footer />
     </div>

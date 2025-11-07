@@ -1,42 +1,52 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Search, CheckCircle, Clock, Play, Code, Lightbulb, Star, Trophy, RotateCcw, Terminal } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Play, Code, Lightbulb, Star, Trophy, RotateCcw, Terminal } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import exampleImage from 'figma:asset/92f61c2fba9265b29974c4ad1a13c4c9ada6cd46.png';
 import { getLessonsByModuleId, getModuleById, Lesson, Module } from '../api/data';
+import { CodeEditor } from './CodeEditor';
 
 interface ModuleDetailPageProps {
   moduleId: string;
   onBack: () => void;
-  onProgressClick?: () => void;
-  onFreeCodeClick?: () => void;
   onChallengeClick?: () => void;
   onQuizClick?: () => void;
 }
 
-export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCodeClick, onChallengeClick, onQuizClick }: ModuleDetailPageProps) {
+export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizClick }: ModuleDetailPageProps) {
   const [currentModule, setCurrentModule] = useState<Module | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [codeOutputs, setCodeOutputs] = useState<Record<number, string>>({});
   const [runningCode, setRunningCode] = useState<Record<number, boolean>>({});
   const [editedCode, setEditedCode] = useState<Record<number, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Load the selected module and its lessons
-    getModuleById(moduleId).then((module) => {
-      if (module) setCurrentModule(module);
-    });
+    // Reset loading state when moduleId changes
+    setIsLoading(true);
+    setCurrentModule(null);
+    setLessons([]);
+    setCurrentLessonIndex(0);
     
-    getLessonsByModuleId(moduleId).then((loadedLessons) => {
+    // Load the selected module and its lessons
+    Promise.all([
+      getModuleById(moduleId),
+      getLessonsByModuleId(moduleId)
+    ]).then(([module, loadedLessons]) => {
+      if (module) setCurrentModule(module);
       setLessons(loadedLessons);
-      setCurrentLessonIndex(0); // Reset to first lesson when module changes
+      setCurrentLessonIndex(0);
       // Reset code states when changing lessons
       setCodeOutputs({});
       setRunningCode({});
       setEditedCode({});
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error('Error loading module data:', error);
+      setIsLoading(false);
     });
   }, [moduleId]);
 
@@ -306,33 +316,31 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-6">
+          {/* Left: Back Button */}
+          <div className="flex items-center">
             <Button 
               onClick={onBack}
-              className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg text-lg"
+              className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-4 rounded-2xl shadow-lg text-lg flex items-center gap-2"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5" />
+              Go back
             </Button>
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 p-3 rounded-xl">
-                <Code className="w-8 h-8 text-white" />
-              </div>
-              <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
-            </div>
           </div>
           
-          {/* Course Title in Center */}
-          <div className="flex items-center space-x-3">
-     
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide mr-50">
+          {/* Center: Course Title */}
+          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
               PYTHON <span className="text-blue-600">ADVENTURES</span>
             </h1>
-       
           </div>
           
-          <Button className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg">
-            <Search className="w-6 h-6" />
-          </Button>
+          {/* Right: Logo */}
+          <div className="flex items-center space-x-4">
+            <div className="bg-blue-600 p-3 rounded-xl">
+              <Code className="w-8 h-8 text-white" />
+            </div>
+            <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
+          </div>
         </div>
 
         {/* Lesson Navigation Tabs */}
@@ -341,13 +349,6 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             <div className="flex space-x-2">
               <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-large">
                 Learn
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
-                onClick={onFreeCodeClick}
-              >
-                Free Code
               </Button>
               <Button 
                 variant="ghost" 
@@ -362,13 +363,6 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
                 onClick={onQuizClick}
               >
                 Quiz
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
-                onClick={onProgressClick}
-              >
-                Progress
               </Button>
             </div>
           </div>
@@ -393,7 +387,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             </div>
 
             {/* Loading State */}
-            {!currentLesson && lessons.length === 0 && (
+            {isLoading && (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">📚</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading lessons...</h2>
@@ -402,7 +396,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             )}
 
             {/* No Lessons State */}
-            {!currentLesson && lessons.length === 0 && currentModule && (
+            {!isLoading && !currentLesson && lessons.length === 0 && (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🚧</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Coming Soon!</h2>
@@ -411,7 +405,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             )}
 
             {/* Lesson Content */}
-            {currentLesson && (
+            {!isLoading && currentLesson && (
               <>
                 <Card className="p-8 mb-8 rounded-3xl shadow-lg">
                   <div className="flex items-start space-x-6">
@@ -475,7 +469,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
                           
                           <div className="bg-gray-900 rounded-2xl p-6">
                             <div className="flex items-center justify-between mb-4">
-                              <span className="text-green-400 font-medium">Python Code</span>
+                              <span className="text-green-400 font-medium">Python Code (with Syntax Highlighting)</span>
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
@@ -516,16 +510,18 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
                               </div>
                             </div>
                             <div className="relative">
-                              <textarea
-                                className="w-full bg-gray-800 text-white text-lg font-mono p-4 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                              <CodeEditor
+
                                 rows={Math.max(example.code.split('\n').length, 3)}
                                 value={editedCode[index] !== undefined ? editedCode[index] : example.code}
-                                onChange={(e) => setEditedCode({ ...editedCode, [index]: e.target.value })}
+                                onChange={(newCode) => setEditedCode({ ...editedCode, [index]: newCode })}
                                 spellCheck={false}
                                 placeholder="# Write your Python code here..."
+minHeight="150px"
+                                 showLineNumbers={false}
                               />
                               {editedCode[index] && editedCode[index] !== example.code && (
-                                <div className="absolute top-2 right-2">
+                                <div className="absolute top-2 right-2 z-10">
                                   <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                                     ✏️ Edited
                                   </span>
@@ -585,28 +581,31 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
             )}
 
             {/* Next Lesson Button */}
-            <div className="text-center">
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
-                onClick={() => {
-                  if (currentLessonIndex < lessons.length - 1) {
-                    setCurrentLessonIndex(currentLessonIndex + 1);
+            {!isLoading && lessons.length > 0 && (
+              <div className="text-center">
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                  onClick={() => {
+                    if (currentLessonIndex < lessons.length - 1) {
+                      setCurrentLessonIndex(currentLessonIndex + 1);
+                    }
+                  }}
+                  disabled={currentLessonIndex >= lessons.length - 1}
+                >
+                  <span className="mr-3">🚀</span>
+                  {currentLessonIndex < lessons.length - 1 
+                    ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
+                    : 'Module Complete!'
                   }
-                }}
-                disabled={currentLessonIndex >= lessons.length - 1}
-              >
-                <span className="mr-3">🚀</span>
-                {currentLessonIndex < lessons.length - 1 
-                  ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
-                  : 'Module Complete!'
-                }
-                <span className="ml-3">→</span>
-              </Button>
-            </div>
+                  <span className="ml-3">→</span>
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Progress Sidebar */}
-          <div className="w-80">
+          {!isLoading && lessons.length > 0 && (
+            <div className="w-80">
             <Card className="p-6 rounded-3xl shadow-lg sticky top-8">
               <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
                 <Star className="w-6 h-6 text-yellow-500 mr-3" />
@@ -654,16 +653,6 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
                 })}
                 
                 <div 
-                  className="flex items-center justify-between bg-green-50 p-3 rounded-xl cursor-pointer hover:bg-green-100 transition-colors"
-                  onClick={onFreeCodeClick}
-                >
-                  <span className="text-green-800 font-medium">Free Code!</span>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                    <Play className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                <div 
                   className="flex items-center justify-between bg-orange-50 p-3 rounded-xl cursor-pointer hover:bg-orange-100 transition-colors"
                   onClick={onChallengeClick}
                 >
@@ -695,6 +684,7 @@ export function ModuleDetailPage({ moduleId, onBack, onProgressClick, onFreeCode
               </div>
             </Card>
           </div>
+          )}
         </div>
       </div>
     </div>

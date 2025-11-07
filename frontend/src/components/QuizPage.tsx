@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Brain, CheckCircle, X, Lightbulb, Star, Award, Timer, Target } from 'lucide-react';
+import { ArrowLeft, Brain, CheckCircle, X, Lightbulb, Star, Award, Timer, Target } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { newQuizzesData } from '../api/challenges-quizzes-data-fixed';
 
 interface QuizPageProps {
+  moduleId: string;
   onBack: () => void;
-  onProgressClick?: () => void;
   onLearnClick?: () => void;
-  onFreeCodeClick?: () => void;
   onChallengeClick?: () => void;
 }
 
@@ -24,42 +24,21 @@ interface QuizQuestion {
   difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 
-const quizQuestions: QuizQuestion[] = [
-  {
-    id: 1,
-    question: "What is the correct way to create a variable in Python?",
-    type: "multiple-choice",
-    options: [
-      "var name = 'Alice'",
-      "name = 'Alice'",
-      "string name = 'Alice'",
-      "let name = 'Alice'"
-    ],
-    correctAnswer: 1,
-    explanation: "In Python, you create variables by simply assigning a value using the = operator. No special keywords are needed!",
-    difficulty: "Easy"
-  },
-  {
-    id: 2,
-    question: "What will this code output? print(5 + 3 * 2)",
-    type: "code-output",
-    options: ["16", "11", "10", "13"],
-    correctAnswer: 1,
-    explanation: "Python follows order of operations (PEMDAS). Multiplication happens first: 3 * 2 = 6, then addition: 5 + 6 = 11",
-    difficulty: "Medium"
-  },
-  {
-    id: 3,
-    question: "Variables in Python can store different types of data.",
-    type: "true-false",
-    options: ["True", "False"],
-    correctAnswer: 0,
-    explanation: "Correct! Python variables can store integers, strings, lists, and many other data types. Python is dynamically typed!",
-    difficulty: "Easy"
-  }
-];
-
-export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClick, onChallengeClick }: QuizPageProps) {
+export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: QuizPageProps) {
+  // Get quizzes for this module
+  const moduleQuizzes = newQuizzesData.filter(quiz => quiz.moduleId === moduleId);
+  const currentQuiz = moduleQuizzes[0]; // For now, we'll use the first quiz. Later we can add quiz selection
+  
+  // Convert the quiz questions to the format expected by the component
+  const quizQuestions: QuizQuestion[] = currentQuiz?.questions.map((q, index) => ({
+    id: index + 1,
+    question: q.question,
+    type: 'multiple-choice' as const,
+    options: q.options,
+    correctAnswer: q.correctAnswer,
+    explanation: q.explanation,
+    difficulty: 'Easy' as const
+  })) || [];
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -70,7 +49,23 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
   const [streak, setStreak] = useState(0);
 
   const totalQuestions = quizQuestions.length;
-  const progressPercentage = ((currentQuestion + 1) / totalQuestions) * 100;
+  const progressPercentage = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
+
+  // Show error message if no quizzes available
+  if (!currentQuiz || quizQuestions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-12 shadow-lg text-center max-w-md">
+          <div className="text-6xl mb-4">📚</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Quizzes Available</h2>
+          <p className="text-gray-600 mb-6">There are no quizzes available for this module yet.</p>
+          <Button onClick={onBack} className="bg-blue-600 hover:bg-blue-700 text-white">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Timer countdown
   useEffect(() => {
@@ -117,6 +112,17 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
     } else {
       setQuizComplete(true);
     }
+  };
+
+  const handleRetakeQuiz = () => {
+    setCurrentQuestion(0);
+    setSelectedAnswer(null);
+    setShowFeedback(false);
+    setScore(0);
+    setAnsweredQuestions([]);
+    setQuizComplete(false);
+    setTimeLeft(180);
+    setStreak(0);
   };
 
   const getScoreColor = () => {
@@ -169,30 +175,31 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center space-x-6">
+          {/* Left: Back Button */}
+          <div className="flex items-center">
             <Button 
               onClick={onBack}
-              className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg"
+              className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-4 rounded-2xl shadow-lg flex items-center gap-2"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5" />
+              Go back
             </Button>
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 p-3 rounded-xl">
-                <Brain className="w-8 h-8 text-white" />
-              </div>
-              <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
-            </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          {/* Center: Course Title */}
+          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
               PYTHON <span className="text-blue-600">QUIZ</span>
             </h1>
           </div>
           
-          <Button className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg">
-            <Search className="w-6 h-6" />
-          </Button>
+          {/* Right: Logo */}
+          <div className="flex items-center space-x-4">
+            <div className="bg-blue-600 p-3 rounded-xl">
+              <Brain className="w-8 h-8 text-white" />
+            </div>
+            <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
@@ -209,13 +216,6 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
               <Button 
                 variant="ghost" 
                 className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onFreeCodeClick}
-              >
-                Free Code
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
                 onClick={onChallengeClick}
               >
                 Challenge
@@ -225,13 +225,6 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
                 className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600"
               >
                 Quiz
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onProgressClick}
-              >
-                Progress
               </Button>
             </div>
           </div>
@@ -540,7 +533,7 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
               
               <div className="flex justify-center space-x-4">
                 <Button 
-                  onClick={() => window.location.reload()}
+                  onClick={handleRetakeQuiz}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl"
                 >
                   Retake Quiz
@@ -551,13 +544,6 @@ export function QuizPage({ onBack, onProgressClick, onLearnClick, onFreeCodeClic
                   className="px-8 py-3 rounded-xl"
                 >
                   Back to Module
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={onProgressClick}
-                  className="px-8 py-3 rounded-xl"
-                >
-                  View Progress
                 </Button>
               </div>
             </Card>

@@ -1,66 +1,66 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Search, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame, Lightbulb } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { newChallengesData } from '../api/challenges-quizzes-data-fixed';
+import { CodeEditor } from './CodeEditor';
 
 interface ChallengePageProps {
+  moduleId: string;
   onBack: () => void;
-  onProgressClick?: () => void;
   onLearnClick?: () => void;
-  onFreeCodeClick?: () => void;
   onQuizClick?: () => void;
 }
 
-export function ChallengePage({ onBack, onProgressClick, onLearnClick, onFreeCodeClick, onQuizClick }: ChallengePageProps) {
-  const [code, setCode] = useState(`# 🔥 CHALLENGE: FizzBuzz Adventure! 
-# Write a program that prints numbers 1 to 15
-# BUT: Replace multiples of 3 with "Fizz"
-#      Replace multiples of 5 with "Buzz" 
-#      Replace multiples of both with "FizzBuzz"
-
-for i in range(1, 16):
-    # Your code here!
-    print(i)`);
+export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: ChallengePageProps) {
+  // Get the challenge for this module
+  const currentChallenge = newChallengesData.find(challenge => challenge.moduleId === moduleId);
+  
+  const [code, setCode] = useState(currentChallenge?.starterCode || '# Loading challenge...');
   const [hasRun, setHasRun] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
+  const [timeLeft, setTimeLeft] = useState(currentChallenge?.timeLimit || 900);
   const [score, setScore] = useState(0);
-  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>(
+    currentChallenge?.difficulty === 'easy' ? 'Easy' : 
+    currentChallenge?.difficulty === 'hard' ? 'Hard' : 'Medium'
+  );
   const [showHints, setShowHints] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [pyodide, setPyodide] = useState<any>(null);
-  const [output, setOutput] = useState<string>("Loading Python environment...");
+
+  // Update code when moduleId changes
+  useEffect(() => {
+    if (currentChallenge) {
+      setCode(currentChallenge.starterCode);
+      setTimeLeft(currentChallenge.timeLimit);
+      setDifficulty(
+        currentChallenge.difficulty === 'easy' ? 'Easy' : 
+        currentChallenge.difficulty === 'hard' ? 'Hard' : 'Medium'
+      );
+      setHasRun(false);
+      setScore(0);
+      setShowHints(false);
+    }
+  }, [moduleId, currentChallenge]);
+
+  // Show error message if no challenge available
+  if (!currentChallenge) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-12 shadow-lg text-center max-w-md">
+          <div className="text-6xl mb-4">🔥</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">No Challenge Available</h2>
+          <p className="text-gray-600 mb-6">There is no challenge available for this module yet.</p>
+          <Button onClick={onBack} className="bg-blue-600 hover:bg-blue-700 text-white">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const lineCount = code.split('\n').length;
-
-  useEffect(() => {
-    const loadPyodideInstance = async () => {
-      try {
-        // ✅ Inject script only once
-        if (!(window as any).loadPyodide) {
-          const script = document.createElement("script");
-          script.src = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js";
-          script.async = true;
-          script.onload = async () => {
-            const py = await (window as any).loadPyodide();
-            setPyodide(py);
-            setOutput("✅ Python ready! Write your code and click Submit Challenge.");
-          };
-          document.body.appendChild(script);
-        } else {
-          const py = await (window as any).loadPyodide();
-          setPyodide(py);
-          setOutput("✅ Python ready! Write your code and click Submit Challenge.");
-        }
-      } catch (err) {
-        console.error("Failed to load Pyodide:", err);
-        setOutput("❌ Could not load Python environment.");
-      }
-    };
-
-    loadPyodideInstance();
-  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -76,29 +76,9 @@ for i in range(1, 16):
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleRunCode = async () => {
-    if (!pyodide) {
-      setOutput("⚙️ Loading Python environment...");
-      return;
-    }
-
+  const handleRunCode = () => {
     setHasRun(true);
-    setOutput("▶ Running your code...\n");
-
-    try {
-      // Redirect stdout
-      pyodide.runPython(`
-  import io, sys
-  sys.stdout = io.StringIO()
-  `);
-
-      await pyodide.runPythonAsync(code);
-      const result = pyodide.runPython("sys.stdout.getvalue()");
-      setOutput(result || "✅ No output");
-    } catch (err: any) {
-      setOutput("❌ Error:\n" + err);
-    }
-
+    // Calculate score based on time remaining and code quality
     const timeBonus = Math.floor(timeLeft / 10);
     const completionBonus = 100;
     setScore(timeBonus + completionBonus);
@@ -109,17 +89,11 @@ for i in range(1, 16):
   };
 
   const handleResetCode = () => {
-    setCode(`# 🔥 CHALLENGE: FizzBuzz Adventure! 
-# Write a program that prints numbers 1 to 15
-# BUT: Replace multiples of 3 with "Fizz"
-#      Replace multiples of 5 with "Buzz" 
-#      Replace multiples of both with "FizzBuzz"
-
-for i in range(1, 16):
-    # Your code here!
-    print(i)`);
-    setHasRun(false);
-    setScore(0);
+    if (currentChallenge) {
+      setCode(currentChallenge.starterCode);
+      setHasRun(false);
+      setScore(0);
+    }
   };
 
   const toggleFullscreen = () => {
@@ -165,30 +139,31 @@ for i in range(1, 16):
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center space-x-6">
+          {/* Left: Back Button */}
+          <div className="flex items-center">
             <Button 
               onClick={onBack}
-              className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg"
+              className="bg-white hover:bg-gray-50 text-gray-700 px-6 py-4 rounded-2xl shadow-lg flex items-center gap-2"
             >
-              <ArrowLeft className="w-6 h-6" />
+              <ArrowLeft className="w-5 h-5" />
+              Go back
             </Button>
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 p-3 rounded-xl">
-                <Zap className="w-8 h-8 text-white" />
-              </div>
-              <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
-            </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          {/* Center: Course Title */}
+          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
               PYTHON <span className="text-blue-600">CHALLENGES</span>
             </h1>
           </div>
           
-          <Button className="bg-white hover:bg-gray-50 text-gray-700 p-4 rounded-2xl shadow-lg">
-            <Search className="w-6 h-6" />
-          </Button>
+          {/* Right: Logo */}
+          <div className="flex items-center space-x-4">
+            <div className="bg-blue-600 p-3 rounded-xl">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
@@ -204,13 +179,6 @@ for i in range(1, 16):
               </Button>
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onFreeCodeClick}
-              >
-                Free Code
-              </Button>
-              <Button 
-                variant="ghost" 
                 className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600"
               >
                 Challenge
@@ -221,13 +189,6 @@ for i in range(1, 16):
                 onClick={onQuizClick}
               >
                 Quiz
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onProgressClick}
-              >
-                Progress
               </Button>
             </div>
           </div>
@@ -287,32 +248,27 @@ for i in range(1, 16):
             </div>
             
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-800 mb-2">FizzBuzz Challenge</h4>
+              <h4 className="font-semibold text-gray-800 mb-2">{currentChallenge?.title || 'Challenge'}</h4>
               <p className="text-gray-700 leading-relaxed text-sm">
-                Classic coding challenge! Print numbers 1-15, but replace multiples of 3 with "Fizz", 
-                multiples of 5 with "Buzz", and multiples of both with "FizzBuzz".
+                {currentChallenge?.description || 'Loading challenge description...'}
               </p>
             </div>
 
-            {/* Challenge Requirements */}
+            {/* Challenge Points */}
             <div className="bg-blue-50 rounded-2xl p-4 mb-6">
-              <h5 className="font-semibold text-blue-800 mb-3">Requirements:</h5>
+              <h5 className="font-semibold text-blue-800 mb-3">Challenge Info:</h5>
               <ul className="space-y-2 text-sm text-blue-700">
                 <li className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Numbers 1-15</span>
+                  <span>Points: {currentChallenge?.points || 100} pts</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Multiples of 3 → "Fizz"</span>
+                  <span>Time Limit: {currentChallenge?.timeLimit ? Math.floor(currentChallenge.timeLimit / 60) : 0} minutes</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Multiples of 5 → "Buzz"</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Both → "FizzBuzz"</span>
+                  <span>Difficulty: {difficulty}</span>
                 </li>
               </ul>
             </div>
@@ -337,19 +293,19 @@ for i in range(1, 16):
                   <ul className="space-y-3 text-sm text-yellow-900">
                     <li className="flex items-start space-x-2">
                       <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Use the <code className="bg-yellow-100 px-1 rounded">%</code> (modulo) operator to check if a number is divisible</span>
+                      <span>Read the challenge description carefully and understand what's expected</span>
                     </li>
                     <li className="flex items-start space-x-2">
                       <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Check for multiples of both 3 AND 5 first, before checking each separately</span>
+                      <span>Start by writing out the steps in comments before coding</span>
                     </li>
                     <li className="flex items-start space-x-2">
                       <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Use <code className="bg-yellow-100 px-1 rounded">if/elif/else</code> statements to handle different cases</span>
+                      <span>Test your code with simple examples first</span>
                     </li>
                     <li className="flex items-start space-x-2">
                       <span className="text-yellow-600 font-bold">💡</span>
-                      <span>If a number is divisible by 15, it's divisible by both 3 and 5!</span>
+                      <span>Look at the starter code - it gives you clues about the solution structure</span>
                     </li>
                   </ul>
                 </div>
@@ -403,57 +359,21 @@ for i in range(1, 16):
               </div>
             </div>
             
-            {/* Code Editor with Line Numbers */}
-            <div className={`bg-gray-900 rounded-b-2xl relative ${isFullscreen ? 'min-h-[600px]' : 'min-h-[450px]'}`}>
-              <div className="flex">
-                {/* Line Numbers */}
-                <div className="bg-gray-800 px-4 py-6 border-r border-gray-700 min-w-[60px]">
-                  <pre
-                    className="text-gray-500 text-sm font-mono leading-6 text-right select-none"
-                    style={{ 
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                      lineHeight: '1.6'
-                    }}
-                  >
-                    {generateLineNumbers()}
-                  </pre>
-                </div>
-                
-                {/* Code Area */}
-                <div className="flex-1 relative">
-                  <textarea
-                    ref={textareaRef}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className={`w-full bg-transparent text-green-400 font-mono resize-none outline-none p-6 ${
-                      isFullscreen ? 'min-h-[600px]' : 'min-h-[450px]'
-                    }`}
-                    placeholder="# Write your challenge solution here..."
-                    style={{ 
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                      lineHeight: '1.6',
-                      fontSize: '16px'
-                    }}
-                    spellCheck={false}
-                  />
-                  
-                  {/* Status Indicator */}
-                  <div className="absolute top-4 right-4">
-                    <div className="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded-full">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                      <span className="text-gray-400 text-xs">Challenge Active</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Code Editor with Syntax Highlighting */}
+            <div className="relative">
+              <CodeEditor
+                value={code}
+                onChange={setCode}
+                placeholder="# Write your challenge solution here..."
+                minHeight={isFullscreen ? '600px' : '450px'}
+                showLineNumbers={true}
+              />
               
-              {/* Syntax Highlighting Hints */}
-              <div className="absolute bottom-4 left-4 text-gray-500 text-xs">
-                <div className="flex items-center space-x-4">
-                  <span><span className="text-purple-400">■</span> Keywords</span>
-                  <span><span className="text-green-400">■</span> Strings</span>
-                  <span><span className="text-blue-400">■</span> Numbers</span>
-                  <span><span className="text-gray-400">■</span> Comments</span>
+              {/* Status Indicator */}
+              <div className="absolute top-4 right-4 z-10">
+                <div className="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded-full">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                  <span className="text-gray-400 text-xs">Challenge Active</span>
                 </div>
               </div>
             </div>
@@ -497,10 +417,47 @@ for i in range(1, 16):
             </div>
             
             {/* Test Console */}
-            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[300px] overflow-y-auto">
-              <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap">
-                {output || "💡 Write your code and click Submit Challenge!"}
-              </pre>
+            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[300px]">
+              <div className="text-green-400 font-mono text-sm">
+                {!hasRun ? (
+                  <div className="text-gray-500">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <span>▶</span>
+                      <span>Submit your challenge solution...</span>
+                    </div>
+                    <div className="text-blue-400 mt-4">
+                      ⏱️ Timer: {formatTime(timeLeft)}
+                    </div>
+                    <div className="w-2 h-4 bg-blue-400 animate-pulse inline-block mt-2"></div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-blue-400"># Running challenge tests...</div>
+                    <div className="mt-2 space-y-1">
+                      {currentChallenge?.testCases && currentChallenge.testCases.length > 0 ? (
+                        <div className="text-gray-300">
+                          <div className="mb-2">Test Case Results:</div>
+                          {currentChallenge.testCases.map((testCase, index) => (
+                            <div key={index} className="mb-3">
+                              <div className="text-yellow-400">Test {index + 1}:</div>
+                              {testCase.input && <div className="text-gray-400">Input: {testCase.input}</div>}
+                              <div className="text-green-400">Expected: {testCase.expectedOutput}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-green-400">Test output will appear here...</div>
+                      )}
+                    </div>
+                    <div className="mt-4 text-gray-500">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span>All tests passed! 🎉</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {hasRun && (
