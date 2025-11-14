@@ -12,9 +12,10 @@ import { ProgressPage } from "./components/ProgressPage";
 import { FreeCodePage } from "./components/FreeCodePage";
 import { ChallengePage } from "./components/ChallengePage";
 import { QuizPage } from "./components/QuizPage";
+import { AboutUsPage } from "./components/AboutUsPage";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'modules' | 'module-detail' | 'progress' | 'freecode' | 'challenge' | 'quiz'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'modules' | 'module-detail' | 'progress' | 'freecode' | 'challenge' | 'quiz' | 'about'>('landing');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('module-2');
 
   const navigateToDashboard = () => {
@@ -58,6 +59,10 @@ export default function App() {
 
   const navigateBackToDashboard = () => {
     setCurrentPage('dashboard');
+  };
+
+  const navigateToAbout = () => {
+    setCurrentPage('about');
   };
 
   if (currentPage === 'quiz') {
@@ -110,6 +115,7 @@ export default function App() {
           onNavigateToModules={navigateToModules} 
           onNavigateToProgress={navigateToProgress}
           onNavigateToHome={navigateToLanding}
+          onNavigateToAbout={navigateToAbout}
         />
         <DashboardLanding
           onStartLearning={navigateToModules}
@@ -129,6 +135,15 @@ export default function App() {
     />;
   }
 
+  if (currentPage === 'about') {
+    return <AboutUsPage 
+      onBack={navigateToLanding}
+      onNavigateToModules={navigateToDashboard}
+      onNavigateToProgress={navigateToDashboard}
+      onNavigateToHome={navigateToLanding}
+    />;
+  }
+
   // Landing page (marketing page)
   return (
     <div className="min-h-screen bg-white">
@@ -136,6 +151,7 @@ export default function App() {
         onNavigateToModules={navigateToDashboard} 
         onNavigateToProgress={navigateToDashboard}
         onNavigateToHome={navigateToLanding}
+        onNavigateToAbout={navigateToAbout}
       />
       <HeroSection onNavigateToModules={navigateToDashboard} />
       <FeaturesSection />

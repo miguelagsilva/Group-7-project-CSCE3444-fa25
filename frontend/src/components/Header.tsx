@@ -4,9 +4,10 @@ interface HeaderProps {
   onNavigateToModules?: () => void;
   onNavigateToProgress?: () => void;
   onNavigateToHome?: () => void;
+  onNavigateToAbout?: () => void;
 }
 
-export function Header({ onNavigateToModules, onNavigateToProgress, onNavigateToHome }: HeaderProps) {
+export function Header({ onNavigateToModules, onNavigateToProgress, onNavigateToHome, onNavigateToAbout }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-8 py-6 relative z-10">
       <div className="flex items-center">
@@ -32,7 +33,12 @@ export function Header({ onNavigateToModules, onNavigateToProgress, onNavigateTo
         >
           Progress
         </button>
-        <a href="#" className="text-gray-700 hover:text-blue-600 transition-colors">About Us</a>
+        <button 
+          onClick={onNavigateToAbout}
+          className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer"
+        >
+          About Us
+        </button>
       </nav>
       
       <Button 
