@@ -8,14 +8,13 @@ import { Footer } from "./components/Footer";
 import { DashboardLanding } from "./components/DashboardLanding";
 import { ModulesPage } from "./components/ModulesPage";
 import { ModuleDetailPage } from "./components/ModuleDetailPage";
-import { ProgressPage } from "./components/ProgressPage";
 import { FreeCodePage } from "./components/FreeCodePage";
 import { ChallengePage } from "./components/ChallengePage";
 import { QuizPage } from "./components/QuizPage";
 import { AboutUsPage } from "./components/AboutUsPage";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'modules' | 'module-detail' | 'progress' | 'freecode' | 'challenge' | 'quiz' | 'about'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'dashboard' | 'modules' | 'module-detail' | 'freecode' | 'challenge' | 'quiz' | 'about'>('landing');
   const [selectedModuleId, setSelectedModuleId] = useState<string>('module-2');
 
   const navigateToDashboard = () => {
@@ -37,17 +36,13 @@ export default function App() {
     setCurrentPage('module-detail');
   };
 
-  const navigateToProgress = () => {
-    setCurrentPage('progress');
-  };
-
   const navigateToFreeCode = () => {
     setCurrentPage('freecode');
   };
 
   const navigateToChallenge = () => {
     setCurrentPage('challenge');
-  };
+  }
 
   const navigateToQuiz = () => {
     setCurrentPage('quiz');
@@ -86,16 +81,7 @@ export default function App() {
   if (currentPage === 'freecode') {
     return <FreeCodePage 
       onBack={navigateBackToDashboard} 
-      onProgressClick={navigateToProgress}
-      onLearnClick={navigateBackToDashboard}
-    />;
-  }
-
-  if (currentPage === 'progress') {
-    return <ProgressPage 
-      onBack={navigateBackToDashboard}
-      onLearnClick={navigateBackToDashboard}
-      onFreeCodeClick={navigateToFreeCode}
+      onLearnClick={navigateToModules}
     />;
   }
 
@@ -113,14 +99,12 @@ export default function App() {
       <>
         <Header 
           onNavigateToModules={navigateToModules} 
-          onNavigateToProgress={navigateToProgress}
           onNavigateToHome={navigateToLanding}
           onNavigateToAbout={navigateToAbout}
         />
         <DashboardLanding
           onStartLearning={navigateToModules}
           onFreeCodeClick={navigateToFreeCode}
-          onProgressClick={navigateToProgress}
         />
       </>
     );
@@ -130,7 +114,6 @@ export default function App() {
     return <ModulesPage 
       onBack={navigateToDashboard} 
       onModuleClick={navigateToModuleDetail} 
-      onProgressClick={navigateToProgress}
       onFreeCodeClick={navigateToFreeCode}
     />;
   }
@@ -139,7 +122,6 @@ export default function App() {
     return <AboutUsPage 
       onBack={navigateToLanding}
       onNavigateToModules={navigateToDashboard}
-      onNavigateToProgress={navigateToDashboard}
       onNavigateToHome={navigateToLanding}
     />;
   }
@@ -149,7 +131,6 @@ export default function App() {
     <div className="min-h-screen bg-white">
       <Header 
         onNavigateToModules={navigateToDashboard} 
-        onNavigateToProgress={navigateToDashboard}
         onNavigateToHome={navigateToLanding}
         onNavigateToAbout={navigateToAbout}
       />

@@ -77,11 +77,10 @@ function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardPr
 interface ModulesPageProps {
   onBack: () => void;
   onModuleClick?: (moduleId: string) => void;
-  onProgressClick?: () => void;
   onFreeCodeClick?: () => void;
 }
 
-export function ModulesPage({ onBack, onModuleClick, onProgressClick, onFreeCodeClick }: ModulesPageProps) {
+export function ModulesPage({ onBack, onModuleClick, onFreeCodeClick }: ModulesPageProps) {
   const [modules, setModules] = useState<Module[]>([]);
 
   useEffect(() => {
@@ -144,7 +143,7 @@ export function ModulesPage({ onBack, onModuleClick, onProgressClick, onFreeCode
 
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-8">
           {/* Left: Back Button */}
           <div className="flex items-center">
             <Button 
@@ -156,15 +155,15 @@ export function ModulesPage({ onBack, onModuleClick, onProgressClick, onFreeCode
             </Button>
           </div>
           
-          {/* Center: Course Title */}
+          {/* Center: LeetCode for Kids */}
           <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
-              PYTHON <span className="text-blue-600">ADVENTURES</span>
+            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+              LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Logo */}
-          <div className="flex items-center space-x-4">
+          {/* Right: Spacer for alignment */}
+          <div className="flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Zap className="w-8 h-8 text-white" />
             </div>
@@ -185,13 +184,6 @@ export function ModulesPage({ onBack, onModuleClick, onProgressClick, onFreeCode
                 onClick={onFreeCodeClick}
               >
                 Free Code
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onProgressClick}
-              >
-                Progress
               </Button>
             </div>
           </div>

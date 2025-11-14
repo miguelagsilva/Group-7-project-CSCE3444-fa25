@@ -2,12 +2,11 @@ import { Button } from "./ui/button";
 
 interface HeaderProps {
   onNavigateToModules?: () => void;
-  onNavigateToProgress?: () => void;
   onNavigateToHome?: () => void;
   onNavigateToAbout?: () => void;
 }
 
-export function Header({ onNavigateToModules, onNavigateToProgress, onNavigateToHome, onNavigateToAbout }: HeaderProps) {
+export function Header({ onNavigateToModules, onNavigateToHome, onNavigateToAbout }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-8 py-6 relative z-10">
       <div className="flex items-center">
@@ -26,12 +25,6 @@ export function Header({ onNavigateToModules, onNavigateToProgress, onNavigateTo
           className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer"
         >
           Learn
-        </button>
-        <button 
-          onClick={onNavigateToProgress}
-          className="text-gray-700 hover:text-blue-600 transition-colors cursor-pointer"
-        >
-          Progress
         </button>
         <button 
           onClick={onNavigateToAbout}

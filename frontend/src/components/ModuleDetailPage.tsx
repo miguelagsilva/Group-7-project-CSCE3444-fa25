@@ -327,15 +327,15 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
             </Button>
           </div>
           
-          {/* Center: Course Title */}
+          {/* Center: LeetCode for Kids */}
           <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
-              PYTHON <span className="text-blue-600">ADVENTURES</span>
+            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+              LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Logo */}
-          <div className="flex items-center space-x-4">
+          {/* Right: Spacer for alignment */}
+          <div className="flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Code className="w-8 h-8 text-white" />
             </div>
@@ -344,7 +344,7 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
         </div>
 
         {/* Lesson Navigation Tabs */}
-        <div className="flex justify-center mb-16">
+        <div className="flex justify-center mb-8">
           <div className="bg-white rounded-2xl py-2 px-6 shadow-lg">
             <div className="flex space-x-2">
               <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-large">

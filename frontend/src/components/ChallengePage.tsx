@@ -150,15 +150,15 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             </Button>
           </div>
           
-          {/* Center: Course Title */}
+          {/* Center: LeetCode for Kids */}
           <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
-              PYTHON <span className="text-blue-600">CHALLENGES</span>
+            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+              LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Logo */}
-          <div className="flex items-center space-x-4">
+          {/* Right: Spacer for alignment */}
+          <div className="flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Zap className="w-8 h-8 text-white" />
             </div>

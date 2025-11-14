@@ -8,10 +8,9 @@ import { Progress } from './ui/progress';
 interface DashboardLandingProps {
   onStartLearning: () => void;
   onFreeCodeClick: () => void;
-  onProgressClick: () => void;
 }
 
-export function DashboardLanding({ onStartLearning, onFreeCodeClick, onProgressClick }: DashboardLandingProps) {
+export function DashboardLanding({ onStartLearning, onFreeCodeClick }: DashboardLandingProps) {
   // Mock data for the dashboard
   const stats = [
     { label: 'Lessons Completed', value: '12', icon: BookOpen, color: 'bg-blue-500', change: '+3 this week' },
@@ -173,28 +172,6 @@ export function DashboardLanding({ onStartLearning, onFreeCodeClick, onProgressC
                     <span className="font-bold">Free Code</span>
                   </div>
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                
-                <Button 
-                  onClick={onProgressClick}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-5 rounded-2xl flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Trophy className="w-5 h-5" />
-                    <span className="font-bold">My Progress</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  className="w-full border-2 border-orange-300 text-orange-600 hover:bg-orange-50 py-5 rounded-2xl flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5" />
-                    <span className="font-bold">Daily Challenge</span>
-                  </div>
-                  <Badge className="bg-orange-500 text-white">New!</Badge>
                 </Button>
               </div>
             </Card>

@@ -6,11 +6,10 @@ import { GraduationCap, Users, Book, Award } from 'lucide-react';
 interface AboutUsPageProps {
   onBack: () => void;
   onNavigateToModules?: () => void;
-  onNavigateToProgress?: () => void;
   onNavigateToHome?: () => void;
 }
 
-export function AboutUsPage({ onBack, onNavigateToModules, onNavigateToProgress, onNavigateToHome }: AboutUsPageProps) {
+export function AboutUsPage({ onBack, onNavigateToModules, onNavigateToHome }: AboutUsPageProps) {
   const teamMembers = [
     { name: 'Alfredo Guevara', id: '11501470' },
     { name: 'Aminat Usman', id: '11846769' },
@@ -22,7 +21,6 @@ export function AboutUsPage({ onBack, onNavigateToModules, onNavigateToProgress,
     <div className="min-h-screen bg-white">
       <Header 
         onNavigateToModules={onNavigateToModules} 
-        onNavigateToProgress={onNavigateToProgress}
         onNavigateToHome={onNavigateToHome}
         onNavigateToAbout={onBack}
       />

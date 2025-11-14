@@ -7,10 +7,9 @@ import { CodeEditor } from './CodeEditor';
 interface FreeCodePageProps {
   onBack: () => void;
   onLearnClick?: () => void;
-  onProgressClick?: () => void;
 }
 
-export function FreeCodePage({ onBack, onLearnClick, onProgressClick }: FreeCodePageProps) {
+export function FreeCodePage({ onBack, onLearnClick }: FreeCodePageProps) {
   const [code, setCode] = useState(`# Welcome to Free Code! 🚀
 # Write any Python code you want here and click "Run Code" to see the output
 
@@ -293,17 +292,17 @@ print(f"{x} + {y} = {x + y}")
             </Button>
           </div>
           
-          {/* Center: Course Title */}
+          {/* Center: LeetCode for Kids */}
           <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 tracking-wide">
-              PYTHON <span className="text-blue-600">ADVENTURES</span>
+            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+              LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Logo */}
-          <div className="flex items-center space-x-4">
+          {/* Right: Spacer for alignment */}
+          <div className="flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
-              <Code className="w-8 h-8 text-white" />
+              <Terminal className="w-8 h-8 text-white" />
             </div>
             <span className="text-gray-700 font-medium text-xl">LeetCode for Kids</span>
           </div>
@@ -322,13 +321,6 @@ print(f"{x} + {y} = {x + y}")
               </Button>
               <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium">
                 Free Code
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
-                onClick={onProgressClick}
-              >
-                Progress
               </Button>
             </div>
           </div>
