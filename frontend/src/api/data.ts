@@ -1578,6 +1578,12 @@ export const getModulesByCourseId = (courseId: string): Promise<Module[]> => {
   });
 };
 
+export const getModules = (): Promise<Module[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(modulesData), 100);
+  });
+};
+
 export const getModuleById = (id: string): Promise<Module | undefined> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(modulesData.find(m => m.id === id)), 100);

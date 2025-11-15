@@ -160,7 +160,7 @@ export default function App() {
       <FeaturesSection />
       <CoursesSection onNavigateToModules={navigateToDashboard} />
       <TestimonialsSection />
-      <Footer />
+      <Footer onNavigateToModules={navigateToDashboard} />
     </div>
   );
 }
