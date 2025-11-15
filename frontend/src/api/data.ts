@@ -1638,6 +1638,14 @@ export const getQuizByModuleId = (moduleId: string): Promise<Quiz | undefined> =
   });
 };
 
+// Get count of completed lessons across all modules
+export const getCompletedLessonsCount = (): Promise<number> => {
+  return new Promise((resolve) => {
+    const completedCount = lessonsData.filter(lesson => lesson.completed).length;
+    setTimeout(() => resolve(completedCount), 100);
+  });
+};
+
 export const getFeatures = (): Promise<Feature[]> => {
   return new Promise((resolve) => {
     setTimeout(() => resolve(featuresData), 100);

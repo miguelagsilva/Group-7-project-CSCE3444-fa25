@@ -12,6 +12,7 @@ interface QuizPageProps {
   onBack: () => void;
   onLearnClick?: () => void;
   onChallengeClick?: () => void;
+  onNextModule?: () => void;
 }
 
 interface QuizQuestion {
@@ -24,7 +25,7 @@ interface QuizQuestion {
   difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 
-export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: QuizPageProps) {
+export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onNextModule }: QuizPageProps) {
   // Get quizzes for this module
   const moduleQuizzes = newQuizzesData.filter(quiz => quiz.moduleId === moduleId);
   const currentQuiz = moduleQuizzes[0]; // For now, we'll use the first quiz. Later we can add quiz selection
@@ -545,6 +546,16 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
                 >
                   Back to Module
                 </Button>
+                {onNextModule && (
+                  <Button 
+                    onClick={onNextModule}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all duration-200"
+                  >
+                    <span className="mr-3">🚀</span>
+                    Next Module
+                    <span className="ml-3">→</span>
+                  </Button>
+                )}
               </div>
             </Card>
           </div>

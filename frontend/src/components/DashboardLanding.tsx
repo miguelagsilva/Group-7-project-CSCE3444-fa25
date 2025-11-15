@@ -1,28 +1,31 @@
-import { useState } from 'react';
-import { Code, Trophy, Zap, Target, BookOpen, Star, TrendingUp, Award, Flame, Clock, Play, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Code, Trophy, Zap, Target, BookOpen, Star, TrendingUp, Award, Flame, Clock, Play, ChevronRight, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
+import { getCompletedLessonsCount } from '../api/data';
 
 interface DashboardLandingProps {
   onStartLearning: () => void;
   onFreeCodeClick: () => void;
+  onNavigateToHome?: () => void;
 }
 
-export function DashboardLanding({ onStartLearning, onFreeCodeClick }: DashboardLandingProps) {
-  // Mock data for the dashboard
-  const stats = [
-    { label: 'Lessons Completed', value: '12', icon: BookOpen, color: 'bg-blue-500', change: '+3 this week' },
-    { label: 'Current Streak', value: '5', icon: Flame, color: 'bg-orange-500', change: 'days' },
-    { label: 'XP Points', value: '850', icon: Star, color: 'bg-yellow-500', change: '+120 today' },
-    { label: 'Challenges Won', value: '8', icon: Trophy, color: 'bg-purple-500', change: '2 pending' },
-  ];
+export function DashboardLanding({ onStartLearning, onFreeCodeClick, onNavigateToHome }: DashboardLandingProps) {
+  const [completedLessons, setCompletedLessons] = useState(0);
 
-  const recentActivity = [
-    { title: 'Variables & Data Types', type: 'Lesson', status: 'completed', time: '2 hours ago', xp: 50 },
-    { title: 'Loop Master Challenge', type: 'Challenge', status: 'completed', time: '1 day ago', xp: 100 },
-    { title: 'Conditional Statements Quiz', type: 'Quiz', status: 'completed', time: '2 days ago', xp: 75 },
+  useEffect(() => {
+    // Load completed lessons count
+    getCompletedLessonsCount().then(count => {
+      setCompletedLessons(count);
+    });
+  }, []);
+
+  // Mock data for the dashboard - removed Current Streak and Challenges Won
+  const stats = [
+    { label: 'Lessons Completed', value: completedLessons.toString(), icon: BookOpen, color: 'bg-blue-500', change: '+3 this week' },
+    { label: 'XP Points', value: '850', icon: Star, color: 'bg-yellow-500', change: '+120 today' },
   ];
 
   const upcomingLessons = [
@@ -173,30 +176,6 @@ export function DashboardLanding({ onStartLearning, onFreeCodeClick }: Dashboard
                   </div>
                   <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
-              </div>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card className="p-6 rounded-3xl shadow-lg">
-              <h3 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-500" />
-                Recent Activity
-              </h3>
-              <div className="space-y-3">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-xl">
-                    <div className="flex items-start justify-between mb-1">
-                      <p className="font-bold text-sm text-gray-800">{activity.title}</p>
-                      <Badge className="bg-green-500 text-white text-xs">
-                        +{activity.xp} XP
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-gray-600">{activity.type}</p>
-                      <p className="text-xs text-gray-500">{activity.time}</p>
-                    </div>
-                  </div>
-                ))}
               </div>
             </Card>
 

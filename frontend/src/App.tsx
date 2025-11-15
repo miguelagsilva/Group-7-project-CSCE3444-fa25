@@ -36,6 +36,21 @@ export default function App() {
     setCurrentPage('module-detail');
   };
 
+  const navigateToNextModule = () => {
+    // Map current module to next module
+    const moduleOrder = ['module-1', 'module-2', 'module-3'];
+    const currentIndex = moduleOrder.indexOf(selectedModuleId);
+    
+    if (currentIndex >= 0 && currentIndex < moduleOrder.length - 1) {
+      const nextModuleId = moduleOrder[currentIndex + 1];
+      setSelectedModuleId(nextModuleId);
+      setCurrentPage('modules'); // Go back to modules page to see the new module
+    } else {
+      // If it's the last module, go back to modules page
+      setCurrentPage('modules');
+    }
+  };
+
   const navigateToFreeCode = () => {
     setCurrentPage('freecode');
   };
@@ -66,6 +81,7 @@ export default function App() {
       onBack={() => navigateToModuleDetail(selectedModuleId)} 
       onLearnClick={() => navigateToModuleDetail(selectedModuleId)}
       onChallengeClick={navigateToChallenge}
+      onNextModule={navigateToNextModule}
     />;
   }
 
@@ -101,10 +117,13 @@ export default function App() {
           onNavigateToModules={navigateToModules} 
           onNavigateToHome={navigateToLanding}
           onNavigateToAbout={navigateToAbout}
+          onNavigateToDashboard={navigateToDashboard}
+          currentPage="dashboard"
         />
         <DashboardLanding
           onStartLearning={navigateToModules}
           onFreeCodeClick={navigateToFreeCode}
+          onNavigateToHome={navigateToLanding}
         />
       </>
     );
@@ -121,8 +140,9 @@ export default function App() {
   if (currentPage === 'about') {
     return <AboutUsPage 
       onBack={navigateToLanding}
-      onNavigateToModules={navigateToDashboard}
+      onNavigateToModules={navigateToModules}
       onNavigateToHome={navigateToLanding}
+      onNavigateToDashboard={navigateToDashboard}
     />;
   }
 
@@ -133,6 +153,8 @@ export default function App() {
         onNavigateToModules={navigateToDashboard} 
         onNavigateToHome={navigateToLanding}
         onNavigateToAbout={navigateToAbout}
+        onNavigateToDashboard={navigateToDashboard}
+        currentPage="landing"
       />
       <HeroSection onNavigateToModules={navigateToDashboard} />
       <FeaturesSection />

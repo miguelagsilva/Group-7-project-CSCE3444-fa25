@@ -580,22 +580,42 @@ minHeight="150px"
               </>
             )}
 
-            {/* Next Lesson Button */}
+            {/* Navigation Buttons */}
             {!isLoading && lessons.length > 0 && (
-              <div className="text-center">
+              <div className="flex items-center justify-between gap-4">
+                {/* Previous Lesson Button */}
+                {currentLessonIndex > 0 ? (
+                  <Button 
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                    onClick={() => {
+                      setCurrentLessonIndex(currentLessonIndex - 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <span className="mr-3">←</span>
+                    Previous Lesson
+                  </Button>
+                ) : (
+                  <div></div>
+                )}
+                
+                {/* Next Lesson / Go to Challenge Button */}
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200 ml-auto"
                   onClick={() => {
                     if (currentLessonIndex < lessons.length - 1) {
                       setCurrentLessonIndex(currentLessonIndex + 1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                      // Last lesson - go to challenge
+                      onChallengeClick?.();
                     }
                   }}
-                  disabled={currentLessonIndex >= lessons.length - 1}
                 >
-                  <span className="mr-3">🚀</span>
+                  <span className="mr-3">{currentLessonIndex < lessons.length - 1 ? '🚀' : '🏆'}</span>
                   {currentLessonIndex < lessons.length - 1 
                     ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
-                    : 'Module Complete!'
+                    : 'Go to Challenge'
                   }
                   <span className="ml-3">→</span>
                 </Button>

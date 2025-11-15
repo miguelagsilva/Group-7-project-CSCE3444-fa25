@@ -7,9 +7,10 @@ interface AboutUsPageProps {
   onBack: () => void;
   onNavigateToModules?: () => void;
   onNavigateToHome?: () => void;
+  onNavigateToDashboard?: () => void;
 }
 
-export function AboutUsPage({ onBack, onNavigateToModules, onNavigateToHome }: AboutUsPageProps) {
+export function AboutUsPage({ onBack, onNavigateToModules, onNavigateToHome, onNavigateToDashboard }: AboutUsPageProps) {
   const teamMembers = [
     { name: 'Alfredo Guevara', id: '11501470' },
     { name: 'Aminat Usman', id: '11846769' },
@@ -23,6 +24,8 @@ export function AboutUsPage({ onBack, onNavigateToModules, onNavigateToHome }: A
         onNavigateToModules={onNavigateToModules} 
         onNavigateToHome={onNavigateToHome}
         onNavigateToAbout={onBack}
+        onNavigateToDashboard={onNavigateToDashboard}
+        currentPage="about"
       />
 
       {/* Hero Section - Similar to landing page hero */}

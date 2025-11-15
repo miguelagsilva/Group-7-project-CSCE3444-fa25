@@ -470,12 +470,19 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                   <div className="font-semibold">Final Score: {score} points</div>
                   <div>Time Bonus: {Math.floor(timeLeft / 10)} pts</div>
                 </div>
-                <div className="flex space-x-3">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm">
-                    Next Challenge →
+                <div className="flex space-x-3 justify-center">
+                  <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-base"
+                    onClick={onQuizClick}
+                  >
+                    Take Quiz →
                   </Button>
-                  <Button variant="outline" className="px-4 py-2 rounded-xl text-sm">
-                    Leaderboard
+                  <Button 
+                    variant="outline" 
+                    className="px-6 py-3 rounded-xl text-base"
+                    onClick={onLearnClick}
+                  >
+                    Review Lesson
                   </Button>
                 </div>
               </div>
