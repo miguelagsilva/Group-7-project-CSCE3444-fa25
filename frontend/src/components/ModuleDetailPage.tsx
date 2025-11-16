@@ -1,13 +1,28 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, Clock, Play, Code, Lightbulb, Star, Trophy, RotateCcw, Terminal } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { Card } from './ui/card';
-import { ImageWithFallback } from './figma/ImageWithFallback';
-import exampleImage from 'figma:asset/92f61c2fba9265b29974c4ad1a13c4c9ada6cd46.png';
-import { getLessonsByModuleId, getModuleById, Lesson, Module } from '../api/data';
+import { 
+  Code, 
+  Play, 
+  Lightbulb, 
+  Star, 
+  CheckCircle, 
+  Clock, 
+  Trophy, 
+  ArrowLeft, 
+  Terminal, 
+  RotateCcw 
+} from 'lucide-react';
+import { 
+  Module, 
+  Lesson, 
+  getModuleById, 
+  getLessonsByModuleId 
+} from '../api/data';
 import { MonacoEditor } from './MonacoEditor';
 import { usePyodide } from '../hooks/usePyodide';
+import { getRandomFeedback } from '../utils/practiceFeedback';
+import { validateCode } from '../utils/codeValidation';
 import { 
   markLessonCompleted, 
   isLessonCompleted, 
@@ -33,6 +48,7 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
   const [, forceUpdate] = useState({}); // For forcing re-render when progress changes
   const [practiceMode, setPracticeMode] = useState<Record<string, boolean>>({}); // Track practice mode for each example
   const [currentRunningKey, setCurrentRunningKey] = useState<number | string | null>(null); // Track which editor is running
+  const [practiceFeedback, setPracticeFeedback] = useState<Record<string, { type: 'success' | 'partial' | 'incorrect', message: string }>>({}); // Store feedback for practice exercises
   
   // Pyodide for real Python execution
   const { isLoading: pyodideLoading, isRunning, output: pyodideOutput, runCode: executePython } = usePyodide();
@@ -45,13 +61,96 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
         ...prev,
         [currentRunningKey]: pyodideOutput
       }));
+      
+      // Check if this was a practice exercise and grade it
+      const keyStr = String(currentRunningKey);
+      const currentLesson = lessons[currentLessonIndex]; // Get current lesson from state
+      if (keyStr.includes('-practice') && currentLesson) {
+        // Extract the example index from the key
+        const exampleIndexMatch = keyStr.match(/(\d+)-example-(\d+)-practice/);
+        if (exampleIndexMatch) {
+          const exampleIndex = parseInt(exampleIndexMatch[2]);
+          const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
+          
+          if (matchingExercise) {
+            // Check if there's an error in the output first
+            const hasError = pyodideOutput.includes('Error:') || 
+                           pyodideOutput.includes('SyntaxError') || 
+                           pyodideOutput.includes('NameError') ||
+                           pyodideOutput.includes('TypeError') ||
+                           pyodideOutput.includes('ValueError') ||
+                           pyodideOutput.includes('❌') ||
+                           pyodideOutput.includes('⚠️ Errors:');
+            
+            if (hasError) {
+              // If there's an error, mark as incorrect
+              const feedbackMessage = getRandomFeedback('incorrect');
+              setPracticeFeedback(prev => ({
+                ...prev,
+                [currentRunningKey]: {
+                  type: 'incorrect',
+                  message: feedbackMessage
+                }
+              }));
+            } else {
+              // Extract only the actual output (remove the "✅ Success!" prefix and other formatting)
+              const cleanOutput = pyodideOutput
+                .replace(/✅ Success!\n\n/, '')
+                .replace(/✅ Code executed successfully.*/, '')
+                .trim();
+              
+              // Get validation config or create a default one
+              let validationConfig = matchingExercise.validation;
+              
+              if (!validationConfig) {
+                // If no validation config exists, create a default one
+                const expectedOutput = matchingExercise.expectedOutput || '';
+                
+                if (expectedOutput === '') {
+                  // Empty expected output means any output is acceptable (pattern validation)
+                  validationConfig = {
+                    type: 'pattern' as const,
+                    checks: [
+                      { rule: 'not_empty', message: '💡 You need to print something!' }
+                    ]
+                  };
+                } else {
+                  // Use exact matching for exercises with specific expected output
+                  validationConfig = {
+                    type: 'exact' as const,
+                    expectedOutput: expectedOutput,
+                    ignoreCase: false,
+                    ignoreWhitespace: true,
+                    allowPartialCredit: true
+                  };
+                }
+              }
+              
+              // Grade the output using the new validation system
+              const studentCode = editedCode[currentRunningKey] || '';
+              const validationResult = validateCode(cleanOutput, validationConfig, studentCode);
+              const feedbackMessage = validationResult.message;
+              
+              // Store the feedback
+              setPracticeFeedback(prev => ({
+                ...prev,
+                [currentRunningKey]: {
+                  type: validationResult.type,
+                  message: feedbackMessage
+                }
+              }));
+            }
+          }
+        }
+      }
+      
       setRunningCode(prev => ({
         ...prev,
         [currentRunningKey]: false
       }));
       setCurrentRunningKey(null);
     }
-  }, [isRunning, pyodideOutput, currentRunningKey]);
+  }, [isRunning, pyodideOutput, currentRunningKey, lessons, currentLessonIndex]);
 
   useEffect(() => {
     // Reset loading state when moduleId changes
@@ -84,6 +183,8 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
     setCodeOutputs({});
     setRunningCode({});
     setEditedCode({});
+    setPracticeMode({});
+    setPracticeFeedback({});
   }, [currentLessonIndex]);
 
   const runPythonCode = async (code: string, exampleIndex: number | string) => {
@@ -293,7 +394,9 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                                 <Code className="w-8 h-8 text-blue-600" />
                               </div>
                               <div>
-                                <h3 className="text-2xl font-bold text-gray-800">Code Examples</h3>
+                                <h3 className="text-2xl font-bold text-gray-800">
+                                  {Object.values(practiceMode).some(mode => mode) ? 'Try it Yourself' : 'Code Examples'}
+                                </h3>
                                 <p className="text-gray-600">See these examples in action! Try them yourself.</p>
                               </div>
                             </div>
@@ -317,6 +420,16 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                                       {!isPracticeMode && (
                                         <p className="text-gray-700">{example.explanation}</p>
                                       )}
+                                      {isPracticeMode && (() => {
+                                        const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
+                                        return matchingExercise ? (
+                                          <p className="text-gray-700">{matchingExercise.description}</p>
+                                        ) : (
+                                          <p className="text-gray-700">
+                                            Now it's your turn! Try writing similar code with your own values.
+                                          </p>
+                                        );
+                                      })()}
                                     </div>
                                     
                                     {/* Toggle Button */}
@@ -342,79 +455,57 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                                     </Button>
                                   </div>
 
-                                  {/* Practice Mode Instructions */}
+                                  {/* Practice Mode - Step-by-step instructions and hints */}
                                   {isPracticeMode && (() => {
-                                    // Try to find a matching practice exercise
                                     const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
                                     
-                                    return (
-                                      <div className="mb-4 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                                        <h5 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
-                                          <Lightbulb className="w-5 h-5" />
-                                          Now Try This:
-                                        </h5>
-                                        
-                                        {matchingExercise ? (
-                                          <>
-                                            <p className="text-blue-700 mb-3 font-medium">
-                                              {matchingExercise.description}
-                                            </p>
-                                            
-                                            {/* Step-by-step instructions */}
-                                            <div className="bg-white border border-blue-200 rounded-lg p-3 mb-3">
-                                              <p className="text-blue-800 font-medium mb-2">📝 Steps:</p>
-                                              <ol className="space-y-1">
-                                                {matchingExercise.instructions.map((instruction, i) => (
-                                                  <li key={i} className="text-blue-700 flex items-start gap-2 text-sm">
-                                                    <span className="text-blue-500 font-bold">{i + 1}.</span>
-                                                    <span>{instruction}</span>
-                                                  </li>
-                                                ))}
-                                              </ol>
-                                            </div>
-                                          </>
-                                        ) : (
-                                          <p className="text-blue-700 mb-3">
-                                            Now it's your turn! Try writing similar code with your own values. Can you modify the example to create something new?
-                                          </p>
+                                    return matchingExercise && (matchingExercise.instructions.length > 0 || matchingExercise.hints.length > 0) && (
+                                      <div className="mb-4 space-y-3">
+                                        {/* Step-by-step instructions */}
+                                        {matchingExercise.instructions.length > 0 && (
+                                          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                                            <p className="text-blue-800 font-medium mb-2">📝 Steps:</p>
+                                            <ol className="space-y-1">
+                                              {matchingExercise.instructions.map((instruction, i) => (
+                                                <li key={i} className="text-blue-700 flex items-start gap-2 text-sm">
+                                                  <span className="text-blue-500 font-bold">{i + 1}.</span>
+                                                  <span>{instruction}</span>
+                                                </li>
+                                              ))}
+                                            </ol>
+                                          </div>
                                         )}
                                         
                                         {/* Hints */}
-                                        <div className="mt-3">
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                              const hintKey = `hints-${exampleKey}`;
-                                              setEditedCode({ ...editedCode, [hintKey]: editedCode[hintKey] === 'shown' ? 'hidden' : 'shown' });
-                                            }}
-                                            className="border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800"
-                                          >
-                                            {editedCode[`hints-${exampleKey}`] === 'shown' ? '🙈 Hide Hint' : '💡 Show Hint'}
-                                          </Button>
+                                        {matchingExercise.hints.length > 0 && (
+                                          <div>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => {
+                                                const hintKey = `hints-${exampleKey}`;
+                                                setEditedCode({ ...editedCode, [hintKey]: editedCode[hintKey] === 'shown' ? 'hidden' : 'shown' });
+                                              }}
+                                              className="border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800"
+                                            >
+                                              {editedCode[`hints-${exampleKey}`] === 'shown' ? '🙈 Hide Hint' : '💡 Show Hint'}
+                                            </Button>
 
-                                          {editedCode[`hints-${exampleKey}`] === 'shown' && (
-                                            <div className="mt-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-3">
-                                              {matchingExercise?.hints && matchingExercise.hints.length > 0 ? (
-                                                <div>
-                                                  <p className="text-yellow-800 font-medium mb-2">💡 Hints:</p>
-                                                  <ul className="space-y-1">
-                                                    {matchingExercise.hints.map((hint, i) => (
-                                                      <li key={i} className="text-yellow-700 flex items-start gap-2 text-sm">
-                                                        <span className="text-yellow-600">✦</span>
-                                                        <span>{hint}</span>
-                                                      </li>
-                                                    ))}
-                                                  </ul>
-                                                </div>
-                                              ) : (
-                                                <p className="text-yellow-700">
-                                                  💡 <strong>Hint:</strong> Look at the example above and try to understand each line. Start by copying the structure, then change the values to make it your own!
-                                                </p>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
+                                            {editedCode[`hints-${exampleKey}`] === 'shown' && (
+                                              <div className="mt-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-3">
+                                                <p className="text-yellow-800 font-medium mb-2">💡 Hints:</p>
+                                                <ul className="space-y-1">
+                                                  {matchingExercise.hints.map((hint, i) => (
+                                                    <li key={i} className="text-yellow-700 flex items-start gap-2 text-sm">
+                                                      <span className="text-yellow-600">✦</span>
+                                                      <span>{hint}</span>
+                                                    </li>
+                                                  ))}
+                                                </ul>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                     );
                                   })()}
@@ -495,25 +586,46 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                                     </div>
                                   )}
 
-                                  {/* Expected Output - Only in Practice Mode */}
+                                  {/* Feedback Section - Only in Practice Mode */}
                                   {isPracticeMode && (() => {
-                                    const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
+                                    const feedback = practiceFeedback[practiceCodeKey];
                                     
-                                    return (
-                                      <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-2xl p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                          <CheckCircle className="w-5 h-5 text-green-600" />
-                                          <span className="text-green-800 font-medium">Expected Output:</span>
+                                    return feedback && (
+                                      <div className={`mt-4 border-2 rounded-2xl p-6 animate-pulse ${
+                                        feedback.type === 'success' 
+                                          ? 'bg-green-50 border-green-300' 
+                                          : feedback.type === 'partial'
+                                          ? 'bg-yellow-50 border-yellow-300'
+                                          : 'bg-red-50 border-red-300'
+                                      }`}>
+                                        <div className="flex items-start gap-3">
+                                          <div className={`text-4xl ${
+                                            feedback.type === 'success' ? 'animate-bounce' : ''
+                                          }`}>
+                                            {feedback.type === 'success' ? '🎉' : feedback.type === 'partial' ? '💭' : '💡'}
+                                          </div>
+                                          <div className="flex-1">
+                                            <p className={`text-xl font-bold mb-2 ${
+                                              feedback.type === 'success' 
+                                                ? 'text-green-800' 
+                                                : feedback.type === 'partial'
+                                                ? 'text-yellow-800'
+                                                : 'text-red-800'
+                                            }`}>
+                                              {feedback.message}
+                                            </p>
+                                            {feedback.type === 'partial' && (
+                                              <p className="text-yellow-700 text-sm">
+                                                You're close! Keep trying!
+                                              </p>
+                                            )}
+                                            {feedback.type === 'incorrect' && (
+                                              <p className="text-red-700 text-sm">
+                                                Check the hints for help. You can do this!
+                                              </p>
+                                            )}
+                                          </div>
                                         </div>
-                                        {matchingExercise?.expectedOutput ? (
-                                          <pre className="text-green-900 whitespace-pre-wrap font-mono text-sm bg-white p-3 rounded-lg">
-                                            {matchingExercise.expectedOutput}
-                                          </pre>
-                                        ) : (
-                                          <p className="text-green-700 text-sm">
-                                            Run the code in "View Example" mode to see what the output should look like!
-                                          </p>
-                                        )}
                                       </div>
                                     );
                                   })()}

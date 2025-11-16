@@ -6,7 +6,9 @@ interface PyodideHookResult {
   output: string;
   error: string | null;
   runCode: (code: string) => Promise<void>;
+  runCodeWithInputs: (code: string, inputs: string[]) => Promise<void>;
   clearOutput: () => void;
+  pyodide: any;
 }
 
 export function usePyodide(): PyodideHookResult {
@@ -115,6 +117,83 @@ sys.stderr = StringIO()
     }
   };
 
+  const runCodeWithInputs = async (pythonCode: string, inputs: string[]) => {
+    if (!pyodideRef.current) {
+      setOutput('❌ Python environment is not ready yet. Please wait...');
+      return;
+    }
+
+    setIsRunning(true);
+    setOutput('🚀 Running your code...\n');
+
+    try {
+      const pyodide = pyodideRef.current;
+      
+      // Redirect stdout to capture print statements
+      await pyodide.runPythonAsync(`
+import sys
+from io import StringIO
+sys.stdout = StringIO()
+sys.stderr = StringIO()
+      `);
+
+      // Mock the input() function with provided inputs
+      const inputsArray = inputs.map(i => `"${i.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`).join(', ');
+      await pyodide.runPythonAsync(`
+# Mock input function with predefined inputs
+_input_values = [${inputsArray}]
+_input_index = 0
+
+def input(prompt=""):
+    global _input_index
+    if _input_index < len(_input_values):
+        value = _input_values[_input_index]
+        _input_index += 1
+        return value
+    return ""
+      `);
+
+      // Run the user's code
+      await pyodide.runPythonAsync(pythonCode);
+
+      // Get the output
+      const stdout = await pyodide.runPythonAsync('sys.stdout.getvalue()');
+      const stderr = await pyodide.runPythonAsync('sys.stderr.getvalue()');
+
+      let result = '';
+      if (stdout) {
+        result += '✅ Success!\n\n' + stdout;
+      } else if (!stderr) {
+        result += '✅ Code executed successfully! (No output to display)\n';
+      }
+
+      if (stderr) {
+        result += '\n⚠️ Errors:\n' + stderr;
+      }
+
+      setOutput(result || '✅ Code executed successfully!');
+    } catch (error: any) {
+      // Format Python errors nicely
+      let errorMessage = error.message || 'Unknown error';
+      
+      // Remove traceback noise for cleaner error messages
+      if (errorMessage.includes('Traceback')) {
+        const lines = errorMessage.split('\n');
+        const errorLine = lines.find(line => 
+          line.includes('Error:') || 
+          line.includes('Exception:')
+        );
+        if (errorLine) {
+          errorMessage = errorLine.trim();
+        }
+      }
+
+      setOutput(`❌ Error:\n\n${errorMessage}\n\nTip: Check your code for syntax errors or typos!`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   const clearOutput = () => {
     setOutput('');
   };
@@ -125,6 +204,8 @@ sys.stderr = StringIO()
     output,
     error,
     runCode,
-    clearOutput
+    runCodeWithInputs,
+    clearOutput,
+    pyodide: pyodideRef.current
   };
 }

@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame, Lightbulb, XCircle, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newChallengesData } from '../api/challenges-quizzes-data-fixed';
 import { MonacoEditor } from './MonacoEditor';
 import { usePyodide } from '../hooks/usePyodide';
+import { useChallengeRunner } from '../hooks/useChallengeRunner';
 import { markChallengeCompleted, isChallengeCompleted } from '../utils/progressManager';
+import { validateChallengeFromRunner, ChallengeValidationResult, TestCaseResult, getDetailedFeedback } from '../utils/validate-challenge';
 
 interface ChallengePageProps {
   moduleId: string;
@@ -24,6 +26,10 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(currentChallenge?.timeLimit || 900);
   const [score, setScore] = useState(0);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
+  const [shouldValidate, setShouldValidate] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [difficulty, setDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>(
     currentChallenge?.difficulty === 'easy' ? 'Easy' : 
     currentChallenge?.difficulty === 'hard' ? 'Hard' : 'Medium'
@@ -32,7 +38,7 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Pyodide for real Python execution
-  const { isLoading: pyodideLoading, isRunning, output, error: pyodideError, runCode: executePython, clearOutput } = usePyodide();
+  const { isLoading: pyodideLoading, isRunning, output, error: pyodideError, runCode: executePython, runCodeWithInputs, clearOutput } = usePyodide();
   
   // Update code when moduleId changes
   useEffect(() => {
@@ -75,6 +81,40 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     }
   }, [timeLeft, hasRun]);
 
+  // Validate output when it changes and shouldValidate is true
+  useEffect(() => {
+    if (shouldValidate && output && currentChallenge && !isRunning) {
+      // Create a RunnerResult object from the Pyodide output
+      const runnerResult = {
+        stdout: output,
+        error: output.includes('Error:') || output.includes('❌') ? output : null,
+        exitCode: output.includes('Error:') || output.includes('❌') ? 1 : 0
+      };
+      
+      const validation = validateChallengeFromRunner(runnerResult, currentChallenge);
+      setValidationResult(validation);
+      
+      // If submitting, handle completion
+      if (isSubmitting) {
+        const baseScore = validation.score;
+        const timeBonus = validation.passed ? Math.floor(timeLeft / 10) : 0;
+        const totalScore = baseScore + timeBonus;
+        setScore(totalScore);
+        
+        if (validation.passed) {
+          markChallengeCompleted(currentChallenge.id);
+          console.log(`✅ Challenge completed: ${currentChallenge.id} with score ${totalScore}`);
+          setIsSubmitted(true);
+        } else {
+          console.log(`❌ Challenge failed: ${currentChallenge.id}`);
+        }
+        setIsSubmitting(false);
+      }
+      
+      setShouldValidate(false);
+    }
+  }, [output, shouldValidate, currentChallenge, isRunning, isSubmitting, timeLeft]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -82,20 +122,35 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
   };
 
   const handleRunCode = async () => {
-    // Run the Python code through Pyodide
-    const result = await executePython(code);
+    // Run the Python code through Pyodide (without validation)
+    setShouldValidate(false); // Don't validate on run, only on submit
+    setValidationResult(null); // Clear previous validation results
+    
+    // Check if we have test cases with inputs
+    if (currentChallenge?.testCases && currentChallenge.testCases.length > 0 && currentChallenge.testCases[0].input) {
+      const inputs = parseTestInputs(currentChallenge.testCases[0].input);
+      await runCodeWithInputs(code, inputs);
+    } else {
+      await executePython(code);
+    }
     
     setHasRun(true);
-    // Calculate score based on time remaining and code quality
-    const timeBonus = Math.floor(timeLeft / 10);
-    const completionBonus = 100;
-    setScore(timeBonus + completionBonus);
+  };
+
+  const handleSubmitChallenge = async () => {
+    // Run the code first with validation
+    setIsSubmitting(true);
+    setShouldValidate(true); // Only validate on submit
     
-    // Mark challenge as completed with the correct challenge ID
-    if (currentChallenge) {
-      markChallengeCompleted(currentChallenge.id);
-      console.log(`✅ Challenge completed: ${currentChallenge.id}`);
+    // Check if we have test cases with inputs
+    if (currentChallenge?.testCases && currentChallenge.testCases.length > 0 && currentChallenge.testCases[0].input) {
+      const inputs = parseTestInputs(currentChallenge.testCases[0].input);
+      await runCodeWithInputs(code, inputs);
+    } else {
+      await executePython(code);
     }
+    
+    setHasRun(true);
   };
 
   const handleCopyCode = () => {
@@ -116,7 +171,12 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
 
   // Generate line numbers
   const generateLineNumbers = () => {
-    return Array.from({ length: Math.max(lineCount, 12) }, (_, i) => i + 1).join('\n');
+    return Array.from({ length: Math.max(lineCount, 12) }, (_, i) => i + 1).join('\\n');
+  };
+
+  // Helper function to parse test inputs
+  const parseTestInputs = (input: string): string[] => {
+    return input.split('\n').filter(line => line.trim() !== '');
   };
 
   return (
@@ -149,6 +209,65 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
       <div className="absolute top-20 left-10 w-16 h-16 bg-blue-200 rounded-full opacity-40 animate-pulse"></div>
       <div className="absolute top-32 right-20 w-12 h-12 bg-blue-300 rounded-full opacity-50 animate-bounce" style={{animationDelay: '1s'}}></div>
       <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-white rounded-full opacity-60 animate-pulse" style={{animationDelay: '2s'}}></div>
+
+      {/* Success Modal Overlay */}
+      {isSubmitted && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-md mx-4 animate-in zoom-in duration-300">
+            <div className="text-center">
+              {/* Trophy Icon */}
+              <div className="mb-6">
+                <div className="w-24 h-24 mx-auto bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-bounce">
+                  <Trophy className="w-12 h-12 text-white" />
+                </div>
+              </div>
+              
+              {/* Success Message */}
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                Challenge Complete! 🎉
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Amazing work! You've successfully completed the challenge.
+              </p>
+              
+              {/* Score Display */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6">
+                <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2">
+                  {score}
+                </div>
+                <div className="text-gray-600 text-sm">Total Points Earned</div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Completion Bonus:</span>
+                    <span className="font-medium">100 pts</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-600 mt-1">
+                    <span>Time Bonus:</span>
+                    <span className="font-medium">{Math.floor(timeLeft / 10)} pts</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-6 rounded-2xl text-lg font-medium shadow-lg"
+                  onClick={onQuizClick}
+                >
+                  Continue to Quiz →
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 py-6 rounded-2xl text-lg font-medium"
+                  onClick={onLearnClick}
+                >
+                  Review Lesson
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
         {/* Header */}
@@ -330,9 +449,9 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
           {/* Middle Section: Code Editor and Output Side by Side */}
           <div className="flex h-[900px]">
             {/* Code Editor */}
-            <div className="flex-1 border-r-2 border-white flex flex-col">
+            <div className="w-[60%] border-r-2 border-white flex flex-col">
               {/* Editor Header */}
-              <div className="bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
+              <div className="bg-gray-800 h-16 px-4 flex items-center justify-between border-b border-gray-700">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -400,11 +519,11 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             </div>
 
             {/* Output Panel */}
-            <div className="flex-1 flex flex-col bg-gray-900">
+            <div className="w-[40%] flex flex-col bg-gray-900">
               {/* Output Header */}
-              <div className="bg-gray-800 p-4 border-b border-gray-700">
+              <div className="bg-gray-800 h-16 px-4 border-b border-gray-700 flex items-center justify-between">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-300">Test Results</h3>
+                  <h3 className="text-sm font-semibold text-gray-300 ">Test Results</h3>
                   <div className="flex items-center space-x-2">
                     <div className={`w-2 h-2 rounded-full ${hasRun ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`}></div>
                     <span className="text-xs text-gray-400">{hasRun ? 'Complete' : 'Waiting'}</span>
@@ -442,60 +561,103 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                         {output || 'Running code...'}
                       </div>
                       
-                      <div className="mt-4 border-t border-gray-700 pt-4">
-                        {currentChallenge?.testCases && currentChallenge.testCases.length > 0 ? (
-                          <div className="text-gray-300">
-                            <div className="mb-2 text-yellow-400">Expected Test Cases:</div>
-                            {currentChallenge.testCases.map((testCase, index) => (
-                              <div key={index} className="mb-3 bg-black/30 p-3 rounded-lg">
-                                <div className="text-yellow-400">Test {index + 1}:</div>
-                                {testCase.input && <div className="text-gray-400">Input: {testCase.input}</div>}
-                                <div className="text-green-400">Expected Output: {testCase.expectedOutput}</div>
-                              </div>
-                            ))}
+                      {/* Validation Results */}
+                      {validationResult && (
+                        <div className="mt-4 border-t border-gray-700 pt-4">
+                          {/* Overall Status */}
+                          <div className={`mb-3 p-3 rounded-lg ${
+                            validationResult.passed ? 'bg-green-900/30 border border-green-700' :
+                            'bg-red-900/30 border border-red-700'
+                          }`}>
+                            <div className="flex items-center space-x-2 mb-2">
+                              {validationResult.passed ? (
+                                <CheckCircle className="w-5 h-5 text-green-400" />
+                              ) : (
+                                <XCircle className="w-5 h-5 text-red-400" />
+                              )}
+                              <span className={validationResult.passed ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
+                                {validationResult.message}
+                              </span>
+                            </div>
+                            <div className="text-gray-400 text-xs">
+                              {validationResult.feedback}
+                            </div>
+                            <div className="mt-2 text-sm">
+                              <span className="text-blue-400">Score: {validationResult.score}/{validationResult.maxScore} pts</span>
+                            </div>
                           </div>
-                        ) : null}
-                      </div>
+                          
+                          {/* Test Case Results */}
+                          {validationResult.testResults.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="text-yellow-400 text-sm font-semibold mb-2">Test Cases:</div>
+                              {validationResult.testResults.map((testResult, index) => (
+                                <div 
+                                  key={index}
+                                  className={`p-3 rounded-lg ${
+                                    testResult.passed ? 'bg-green-900/20 border border-green-800' :
+                                    'bg-red-900/20 border border-red-800'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-yellow-400 font-medium">Test {testResult.testNumber}</span>
+                                    {testResult.passed ? (
+                                      <Badge className="bg-green-700 text-white text-xs">✓ Passed</Badge>
+                                    ) : (
+                                      <Badge className="bg-red-700 text-white text-xs">✗ Failed</Badge>
+                                    )}
+                                  </div>
+                                  {testResult.description && (
+                                    <div className="text-gray-400 text-xs mb-2">{testResult.description}</div>
+                                  )}
+                                  {testResult.input && (
+                                    <div className="text-gray-400 text-xs">Input: {testResult.input}</div>
+                                  )}
+                                  <div className="text-green-400 text-xs">Expected: {testResult.expectedOutput}</div>
+                                  {!testResult.passed && (
+                                    <div className="text-red-400 text-xs">Your Output: {testResult.actualOutput.replace(/^✅ Success!\s*/m, '').replace(/⚠️ Errors:[\s\S]*/m, '').trim()}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                       
                       <div className="mt-4 text-gray-500">
                         <div className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4 text-green-400" />
-                          <span>Challenge submitted! 🎉</span>
+                          {validationResult && validationResult.passed ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 text-green-400" />
+                              <span>{isSubmitted ? 'Challenge submitted! 🎉' : 'All tests passed! Ready to submit! 🎯'}</span>
+                            </>
+                          ) : validationResult && !validationResult.passed ? (
+                            <>
+                              <AlertCircle className="w-4 h-4 text-yellow-400" />
+                              <span>Some tests failed. Review and try again! 💪</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 text-green-400" />
+                              <span>{isSubmitted ? 'Challenge submitted! 🎉' : 'Code executed successfully! 💫'}</span>
+                            </>
+                          )}
                         </div>
+                        {!isSubmitted && validationResult && !validationResult.passed && (
+                          <div className="mt-2 text-yellow-400 text-xs">
+                            💡 Fix the failing tests and click "Submit Challenge" to complete!
+                          </div>
+                        )}
+                        {!isSubmitted && validationResult && validationResult.passed && (
+                          <div className="mt-2 text-green-400 text-xs">
+                            🎉 Excellent! Click "Submit Challenge" to complete the challenge and earn your points!
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* Success Message */}
-              {hasRun && (
-                <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 border-t-2 border-white">
-                  <div className="flex items-center justify-center space-x-2 text-white mb-3">
-                    <Trophy className="w-6 h-6" />
-                    <span className="font-semibold text-lg">Challenge Complete! 🏆</span>
-                  </div>
-                  <div className="text-blue-50 text-sm mb-4 text-center">
-                    <div className="font-semibold">Final Score: {score} points</div>
-                    <div>Time Bonus: {Math.floor(timeLeft / 10)} pts</div>
-                  </div>
-                  <div className="flex space-x-3 justify-center">
-                    <Button 
-                      className="bg-white hover:bg-gray-100 text-blue-600 px-6 py-2 rounded-xl text-sm font-medium"
-                      onClick={onQuizClick}
-                    >
-                      Take Quiz →
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="border-2 border-white text-white hover:bg-white/20 px-6 py-2 rounded-xl text-sm font-medium"
-                      onClick={onLearnClick}
-                    >
-                      Review Lesson
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -510,17 +672,21 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             
             <div className="flex items-center space-x-4">
               <Button 
-                variant="outline"
-                className="px-6 py-3 rounded-xl text-gray-600 border-gray-300 hover:bg-gray-50"
-              >
-                Save Progress
-              </Button>
-              <Button 
                 onClick={handleRunCode}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200"
+                variant="outline"
+                disabled={isRunning}
+                className="px-6 py-3 rounded-xl text-blue-600 border-2 border-blue-600 hover:bg-blue-50 flex items-center space-x-2"
               >
                 <Play className="w-5 h-5" />
-                <span>Submit Challenge</span>
+                <span>{isRunning ? 'Running...' : 'Run Code'}</span>
+              </Button>
+              <Button 
+                onClick={handleSubmitChallenge}
+                disabled={isRunning || score > 0}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                <CheckCircle className="w-5 h-5" />
+                <span>{score > 0 ? 'Submitted ✓' : 'Submit Challenge'}</span>
               </Button>
             </div>
           </div>

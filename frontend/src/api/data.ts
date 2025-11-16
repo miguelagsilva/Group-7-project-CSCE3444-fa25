@@ -1,5 +1,7 @@
 // Mock API Data for LeetCode for Kids Platform
 import { newChallengesData, newQuizzesData } from './challenges-quizzes-data-fixed';
+import { practiceExercisesMap } from './practice-exercises-data';
+import { ValidationConfig } from '../utils/codeValidation';
 
 export interface Course {
   id: string;
@@ -53,6 +55,7 @@ export interface PracticeExercise {
   hints?: string[];
   expectedOutput?: string;
   solution?: string;
+  validation?: ValidationConfig; // New: flexible validation configuration
 }
 
 export interface PracticeProblem {
@@ -257,7 +260,7 @@ export const lessonsData: Lesson[] = [
     duration: '10 min',
     content: {
       introduction: '🎉 Welcome to the exciting world of Python programming! Python is a friendly programming language that helps computers understand what you want them to do.',
-      videoUrl: 'https://www.youtube.com/embed/kqtD5dpn9C8',
+      videoUrl: 'https://www.youtube.com/embed/dapRfLaiGxo?si=Xf9raD19-Xz5503J',
       mainContent: [
         'Python is one of the most popular programming languages in the world! It\'s used to make games, websites, apps, and even control robots!',
         'What makes Python special is that it\'s easy to read and write. The code looks almost like English!',
@@ -284,39 +287,57 @@ print("I'm learning Python!")`,
       practiceExercises: [
         {
           id: 'practice-m1-1-1',
-          title: '🎯 Practice: Your First Message',
-          description: 'Let\'s practice using the print() function! Write code to display your own message.',
+          title: '🎯 Now Try This: Print Your Name',
+          description: 'Now it\'s your turn! Can you print your name?',
           instructions: [
-            'Use the print() function to display a message',
-            'Type your message inside quotes',
-            'Try printing your name and a fun fact about yourself!'
+            'Use print() to display your name',
+            'Remember to put your name inside quotes',
+            'Click Run Code to see your output!'
           ],
-          starterCode: `# Write your code below this line\n# Use print() to display your name\n\n`,
+          starterCode: `# Print your name below\n`,
           hints: [
-            'Remember to put your text inside quotes: print("your message")',
-            'You can use multiple print() statements',
-            'Don\'t forget the parentheses ()'
+            'Use print() with quotes: print("Your Name")',
+            'Make sure to include both opening and closing quotes',
+            'Example: print("Alex")'
           ],
-          expectedOutput: 'Hello! My name is [Your Name]\nI love [Your Hobby]!',
-          solution: `# Write your code below this line\n# Use print() to display your name\n\nprint("Hello! My name is Alex")\nprint("I love coding!")`
+          expectedOutput: '',  // Any output is acceptable for this one
+          solution: `# Print your name below\nprint("Alex")`
         },
         {
           id: 'practice-m1-1-2',
-          title: '🎨 Practice: Fun with Emojis',
-          description: 'Make your messages more fun by adding emojis! Print a message with at least 2 emojis.',
+          title: '🎯 Now Try This: Print Multiple Lines',
+          description: 'Can you print your name AND your favorite hobby on separate lines?',
           instructions: [
-            'Use print() to display a message',
-            'Include at least 2 emojis in your message',
-            'Get creative with your message!'
+            'Use two print() statements',
+            'First one prints your name',
+            'Second one prints your hobby'
           ],
-          starterCode: `# Create a fun message with emojis!\n# Example emojis: 🎮 🚀 🎨 🌟 💻 🐍\n\n`,
+          starterCode: `# Print your name\n\n# Print your favorite hobby\n`,
           hints: [
-            'Emojis go inside the quotes just like regular text',
-            'Try: print("🚀 Python is awesome! 💻")',
-            'You can use any emojis you like!'
+            'You need two separate print() lines',
+            'Each print() statement creates a new line',
+            'Example: print("Alex") then print("Coding")'
           ],
-          expectedOutput: '🚀 I\'m learning to code! 💻',
-          solution: `# Create a fun message with emojis!\n# Example emojis: 🎮 🚀 🎨 🌟 💻 🐍\n\nprint("🚀 I'm learning to code! 💻")\nprint("🐍 Python is fun! 🌟")`
+          expectedOutput: '',  // Any two-line output is acceptable
+          solution: `# Print your name\nprint("Alex")\n\n# Print your favorite hobby\nprint("Coding")`
+        },
+        {
+          id: 'practice-m1-1-3',
+          title: '🎯 Now Try This: Math with Print',
+          description: 'Can you print the result of 5 + 3?',
+          instructions: [
+            'Use print() to show the result of 5 + 3',
+            'No quotes needed for numbers!',
+            'The output should show: 8'
+          ],
+          starterCode: `# Print the result of 5 + 3\n`,
+          hints: [
+            'Numbers don\'t need quotes',
+            'Just do: print(5 + 3)',
+            'Python will calculate it for you!'
+          ],
+          expectedOutput: '8',
+          solution: `# Print the result of 5 + 3\nprint(5 + 3)`
         }
       ]
     }
@@ -358,6 +379,44 @@ print("🎮 Let's code! 🚀")`,
         'Numbers don\'t need quotes: 123',
         'Separate multiple items with commas',
         'Each print() starts on a new line'
+      ],
+      practiceExercises: [
+        {
+          id: 'practice-m1-2-1',
+          title: '🎯 Now Try This: Print Text and Numbers',
+          description: 'Can you print your favorite number with a message?',
+          instructions: [
+            'Print a message like "My favorite number is" followed by a number',
+            'Use a comma to separate the text and the number',
+            'Example output: My favorite number is 7'
+          ],
+          starterCode: `# Print your favorite number with a message\n`,
+          hints: [
+            'Use print() with both text and a number',
+            'Separate them with a comma: print("text", number)',
+            'Example: print("My favorite number is", 7)'
+          ],
+          expectedOutput: '',  // Any valid output is acceptable
+          solution: `# Print your favorite number with a message\nprint("My favorite number is", 7)`
+        },
+        {
+          id: 'practice-m1-2-2',
+          title: '🎯 Now Try This: Print Multiple Numbers',
+          description: 'Can you print three different numbers on separate lines?',
+          instructions: [
+            'Print three numbers: 42, 3.14, and 100',
+            'Each number should be on its own line',
+            'No quotes needed for numbers!'
+          ],
+          starterCode: `# Print three numbers\n\n\n`,
+          hints: [
+            'Use three separate print() statements',
+            'Just put the number inside print()',
+            'Example: print(42)'
+          ],
+          expectedOutput: '42\n3.14\n100',
+          solution: `# Print three numbers\nprint(42)\nprint(3.14)\nprint(100)`
+        }
       ]
     }
   },
@@ -412,6 +471,44 @@ print(10 + 5 * 2 - 3)  # Result: 17`,
         '** means "to the power of"',
         'Use parentheses ( ) to control the order',
         'Python follows PEMDAS rules'
+      ],
+      practiceExercises: [
+        {
+          id: 'practice-m1-3-1',
+          title: '🎯 Now Try This: Calculate Multiplication',
+          description: 'Can you print the result of 6 * 7?',
+          instructions: [
+            'Use print() to show the result of 6 * 7',
+            'Remember: * means multiplication',
+            'The output should show: 42'
+          ],
+          starterCode: `# Print the result of 6 * 7\n`,
+          hints: [
+            'Use the * symbol for multiplication',
+            'Example: print(6 * 7)',
+            'Python will do the math for you!'
+          ],
+          expectedOutput: '42',
+          solution: `# Print the result of 6 * 7\nprint(6 * 7)`
+        },
+        {
+          id: 'practice-m1-3-2',
+          title: '🎯 Now Try This: Order of Operations',
+          description: 'Can you calculate (5 + 3) * 2 using parentheses?',
+          instructions: [
+            'Print the result of (5 + 3) * 2',
+            'Use parentheses to add first, then multiply',
+            'Expected output: 16'
+          ],
+          starterCode: `# Calculate (5 + 3) * 2\n`,
+          hints: [
+            'Parentheses make Python do that part first',
+            'Write it just like in math: (5 + 3) * 2',
+            'The answer is 16!'
+          ],
+          expectedOutput: '16',
+          solution: `# Calculate (5 + 3) * 2\nprint((5 + 3) * 2)`
+        }
       ]
     }
   },
@@ -543,7 +640,7 @@ print(cookies_per_friend)  # Prints: 3.0`,
     duration: '18 min',
     content: {
       introduction: 'Strings are how we work with text in Python. Let\'s learn how to create and manipulate them!',
-      videoUrl: 'https://www.youtube.com/embed/lSItwlnF0eU',
+      videoUrl: 'https://www.youtube.com/watch?v=D-_IjVnD9E0&list=PL1i2rWg7KQOMqgfK-Rc4f7o50WgNfsDdN&index=2',
       mainContent: [
         'A string is just text surrounded by quotes. You can use single quotes (\') or double quotes (").',
         'You can combine strings together - this is called concatenation.',
@@ -684,7 +781,7 @@ print("After finding 3 more:", apples, "apples total! 🍎")`,
     duration: '20 min',
     content: {
       introduction: 'Time to make your programs smart! Learn how to make decisions using if statements - they\'re like giving your code superpowers to think! 🧠',
-      videoUrl: 'https://www.youtube.com/embed/f4KOjWS_KZs',
+      videoUrl: 'https://www.youtube.com/watch?v=UJqogFfQsAs&list=PL1i2rWg7KQOMqgfK-Rc4f7o50WgNfsDdN&index=6',
       mainContent: [
         'An if statement lets your program make choices based on conditions. Think of it like "IF it\'s raining, THEN bring an umbrella!"',
         'You can use comparison operators like == (equal), > (greater than), < (less than) to check conditions.',
@@ -761,7 +858,7 @@ else:
     duration: '22 min',
     content: {
       introduction: 'Functions are like magic spells you can create and use over and over! Learn to write your own reusable code blocks. 🪄',
-      videoUrl: 'https://www.youtube.com/embed/NSbOtYzIQI0',
+      videoUrl: 'https://www.youtube.com/watch?v=jy2qX22dSjM&list=PL1i2rWg7KQOMqgfK-Rc4f7o50WgNfsDdN&index=4',
       mainContent: [
         'A function is a reusable block of code that performs a specific task. Instead of writing the same code multiple times, you create a function!',
         'You define a function using the def keyword, give it a name, and tell it what to do.',
@@ -851,7 +948,7 @@ print("Double of 10 is:", double(10))`,
     duration: '20 min',
     content: {
       introduction: 'Lists are like super-powered variables that can hold multiple items! Learn how to organize and manage collections of data. 📝',
-      videoUrl: 'https://www.youtube.com/embed/ohCDWZgNIU0',
+      videoUrl: 'https://www.youtube.com/watch?v=ZiOb3uRb208&list=PL1i2rWg7KQOMqgfK-Rc4f7o50WgNfsDdN&index=5',
       mainContent: [
         'A list is a container that can hold multiple items in order. Think of it like a shopping list or a playlist!',
         'Lists use square brackets [ ] and items are separated by commas.',
@@ -1200,7 +1297,7 @@ def play_game():
             attempts += 1
             
             if guess == secret:
-                print(f"🎉 Winner! You got it in {attempts} tries!")
+                print(f"🎉 Winner! You got it in \${attempts} tries!")
                 return attempts
             elif guess < secret:
                 print("📈 Go higher!")
@@ -1677,3 +1774,11 @@ export const getUserProgress = (): Promise<UserProgress> => {
     setTimeout(() => resolve(userProgressData), 100);
   });
 };
+
+// Merge practice exercises into lessons
+lessonsData.forEach(lesson => {
+  const exercises = practiceExercisesMap[lesson.id];
+  if (exercises && !lesson.content.practiceExercises) {
+    lesson.content.practiceExercises = exercises;
+  }
+});
