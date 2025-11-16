@@ -263,7 +263,10 @@ export function DashboardLanding({ onStartLearning, onFreeCodeClick, onNavigateT
           {/* Main Content - Current Course Progress */}
           <div className="lg:col-span-2 space-y-6">
             {/* Continue Learning Card */}
-            <Card className="p-8 rounded-3xl shadow-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+            <Card 
+              className="p-8 rounded-3xl shadow-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white cursor-pointer hover:shadow-2xl transition-all duration-200 hover:scale-[1.02]"
+              onClick={handleContinueLearning}
+            >
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
                   <Badge className="bg-white/20 text-white border-0 mb-3">
@@ -298,7 +301,10 @@ export function DashboardLanding({ onStartLearning, onFreeCodeClick, onNavigateT
               </div>
               
               <Button 
-                onClick={handleContinueLearning}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent double-click
+                  handleContinueLearning();
+                }}
                 className="w-full bg-white text-blue-600 hover:bg-blue-50 py-6 rounded-2xl text-lg font-bold shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <Play className="w-5 h-5 mr-2" />

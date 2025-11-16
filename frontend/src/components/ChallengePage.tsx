@@ -4,7 +4,8 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newChallengesData } from '../api/challenges-quizzes-data-fixed';
-import { CodeEditor } from './CodeEditor';
+import { MonacoEditor } from './MonacoEditor';
+import { usePyodide } from '../hooks/usePyodide';
 import { markChallengeCompleted, isChallengeCompleted } from '../utils/progressManager';
 
 interface ChallengePageProps {
@@ -29,7 +30,10 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
   );
   const [showHints, setShowHints] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  
+  // Pyodide for real Python execution
+  const { isLoading: pyodideLoading, isRunning, output, error: pyodideError, runCode: executePython, clearOutput } = usePyodide();
+  
   // Update code when moduleId changes
   useEffect(() => {
     if (currentChallenge) {
@@ -77,7 +81,10 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
+    // Run the Python code through Pyodide
+    const result = await executePython(code);
+    
     setHasRun(true);
     // Calculate score based on time remaining and code quality
     const timeBonus = Math.floor(timeLeft / 10);
@@ -202,7 +209,7 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
         </div>
 
         {/* Challenge Stats Bar */}
-        <div className="bg-white rounded-2xl p-6 mb-8 shadow-lg">
+        <div className="bg-white rounded-2xl p-6 mb-6 shadow-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="flex items-center space-x-3">
@@ -245,267 +252,277 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
           </div>
         </div>
 
-        {/* Main Content - Adjusted Layout for Bigger Editor */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
-          {/* Instructions Panel */}
-          <div className="lg:col-span-1 bg-white rounded-3xl p-8 shadow-lg h-fit">
-            <div className="flex items-center space-x-3 mb-6">
-              <Trophy className="w-6 h-6 text-orange-600" />
-              <h3 className="text-lg font-semibold text-gray-800">Challenge</h3>
+        {/* Main Content - Single Card with Sections */}
+        <div className="bg-white rounded-3xl shadow-lg overflow-hidden mb-8">
+          {/* Top Section: Challenge Info */}
+          <div className="p-6 border-b-2 border-gray-100">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Trophy className="w-6 h-6 text-orange-600" />
+                  <h3 className="text-xl font-bold text-gray-800">{currentChallenge?.title || 'Challenge'}</h3>
+                  <Badge className={`${
+                    difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
+                    difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {difficulty}
+                  </Badge>
+                </div>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  {currentChallenge?.description || 'Loading challenge description...'}
+                </p>
+                
+                <div className="flex items-center space-x-6 text-sm text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-4 h-4 text-blue-600" />
+                    <span>{currentChallenge?.points || 100} pts</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Timer className="w-4 h-4 text-blue-600" />
+                    <span>{currentChallenge?.timeLimit ? Math.floor(currentChallenge.timeLimit / 60) : 0} minutes</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Hints Button */}
+              <div>
+                <Button
+                  onClick={() => setShowHints(!showHints)}
+                  variant="outline"
+                  className="rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium"
+                >
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  {showHints ? 'Hide Hints' : 'Need a Hint?'}
+                </Button>
+              </div>
             </div>
             
-            <div className="mb-6">
-              <h4 className="font-semibold text-gray-800 mb-2">{currentChallenge?.title || 'Challenge'}</h4>
-              <p className="text-gray-700 leading-relaxed text-sm">
-                {currentChallenge?.description || 'Loading challenge description...'}
-              </p>
-            </div>
-
-            {/* Challenge Points */}
-            <div className="bg-blue-50 rounded-2xl p-4 mb-6">
-              <h5 className="font-semibold text-blue-800 mb-3">Challenge Info:</h5>
-              <ul className="space-y-2 text-sm text-blue-700">
-                <li className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Points: {currentChallenge?.points || 100} pts</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Time Limit: {currentChallenge?.timeLimit ? Math.floor(currentChallenge.timeLimit / 60) : 0} minutes</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span>Difficulty: {difficulty}</span>
-                </li>
-              </ul>
-            </div>
-
             {/* Hints Section */}
-            <div className="mb-6">
-              <Button
-                onClick={() => setShowHints(!showHints)}
-                variant="outline"
-                className="w-full rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium py-3"
-              >
-                <Lightbulb className="w-5 h-5 mr-2" />
-                {showHints ? 'Hide Hints' : 'Need a Hint?'}
-              </Button>
+            {showHints && (
+              <div className="mt-4 bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4 animate-in fade-in duration-300">
+                <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  Helpful Hints:
+                </h5>
+                <ul className="space-y-3 text-sm text-yellow-900">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-yellow-600 font-bold">💡</span>
+                    <span>Read the challenge description carefully and understand what's expected</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-yellow-600 font-bold">💡</span>
+                    <span>Start by writing out the steps in comments before coding</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-yellow-600 font-bold">💡</span>
+                    <span>Test your code with simple examples first</span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-yellow-600 font-bold">💡</span>
+                    <span>Look at the starter code - it gives you clues about the solution structure</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Middle Section: Code Editor and Output Side by Side */}
+          <div className="flex h-[900px]">
+            {/* Code Editor */}
+            <div className="flex-1 border-r-2 border-white flex flex-col">
+              {/* Editor Header */}
+              <div className="bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
+                  <span className="text-gray-300 text-sm font-medium">Challenge Editor</span>
+                  <Badge className="bg-blue-600 text-white text-xs">
+                    <Flame className="w-3 h-3 mr-1" />
+                    Challenge Mode
+                  </Badge>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCopyCode}
+                    className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleResetCode}
+                    className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
               
-              {showHints && (
-                <div className="mt-4 bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4 animate-in fade-in duration-300">
-                  <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
-                    <Lightbulb className="w-4 h-4 mr-2" />
-                    Helpful Hints:
-                  </h5>
-                  <ul className="space-y-3 text-sm text-yellow-900">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Read the challenge description carefully and understand what's expected</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Start by writing out the steps in comments before coding</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Test your code with simple examples first</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Look at the starter code - it gives you clues about the solution structure</span>
-                    </li>
-                  </ul>
+              {/* Code Editor */}
+              <div className="flex-1 relative">
+                <MonacoEditor
+                  value={code}
+                  onChange={setCode}
+                  language="python"
+                  theme="vs-dark"
+                  height="100%"
+                />
+                
+                {/* Status Indicator */}
+                <div className="absolute top-4 right-4 z-10">
+                  <div className="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded-full">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                    <span className="text-gray-400 text-xs">Challenge Active</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Editor Footer with Stats */}
+              <div className="bg-gray-800 p-3 border-t border-gray-700 flex justify-between items-center">
+                <div className="flex items-center space-x-3 text-xs text-gray-400">
+                  <span>Lines: {lineCount}</span>
+                  <span>•</span>
+                  <span>Characters: {code.length}</span>
+                </div>
+                
+                <div className="flex items-center space-x-2 text-xs text-blue-400">
+                  <Flame className="w-3 h-3" />
+                  <span>Challenge Mode</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Output Panel */}
+            <div className="flex-1 flex flex-col bg-gray-900">
+              {/* Output Header */}
+              <div className="bg-gray-800 p-4 border-b border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-300">Test Results</h3>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${hasRun ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`}></div>
+                    <span className="text-xs text-gray-400">{hasRun ? 'Complete' : 'Waiting'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Test Console */}
+              <div className="flex-1 p-4 overflow-auto">
+                <div className="text-green-400 font-mono text-sm">
+                  {pyodideLoading && (
+                    <div className="text-yellow-400 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400"></div>
+                        <span>Loading Python environment...</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!hasRun ? (
+                    <div className="text-gray-500">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span>▶</span>
+                        <span>Submit your challenge solution...</span>
+                      </div>
+                      <div className="text-blue-400 mt-4">
+                        ⏱️ Timer: {formatTime(timeLeft)}
+                      </div>
+                      <div className="w-2 h-4 bg-blue-400 animate-pulse inline-block mt-2"></div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-blue-400"># Challenge Output:</div>
+                      <div className="mt-3 mb-4 text-gray-300 whitespace-pre-wrap bg-black/30 p-3 rounded-lg">
+                        {output || 'Running code...'}
+                      </div>
+                      
+                      <div className="mt-4 border-t border-gray-700 pt-4">
+                        {currentChallenge?.testCases && currentChallenge.testCases.length > 0 ? (
+                          <div className="text-gray-300">
+                            <div className="mb-2 text-yellow-400">Expected Test Cases:</div>
+                            {currentChallenge.testCases.map((testCase, index) => (
+                              <div key={index} className="mb-3 bg-black/30 p-3 rounded-lg">
+                                <div className="text-yellow-400">Test {index + 1}:</div>
+                                {testCase.input && <div className="text-gray-400">Input: {testCase.input}</div>}
+                                <div className="text-green-400">Expected Output: {testCase.expectedOutput}</div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      
+                      <div className="mt-4 text-gray-500">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                          <span>Challenge submitted! 🎉</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Success Message */}
+              {hasRun && (
+                <div className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 border-t-2 border-white">
+                  <div className="flex items-center justify-center space-x-2 text-white mb-3">
+                    <Trophy className="w-6 h-6" />
+                    <span className="font-semibold text-lg">Challenge Complete! 🏆</span>
+                  </div>
+                  <div className="text-blue-50 text-sm mb-4 text-center">
+                    <div className="font-semibold">Final Score: {score} points</div>
+                    <div>Time Bonus: {Math.floor(timeLeft / 10)} pts</div>
+                  </div>
+                  <div className="flex space-x-3 justify-center">
+                    <Button 
+                      className="bg-white hover:bg-gray-100 text-blue-600 px-6 py-2 rounded-xl text-sm font-medium"
+                      onClick={onQuizClick}
+                    >
+                      Take Quiz →
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-2 border-white text-white hover:bg-white/20 px-6 py-2 rounded-xl text-sm font-medium"
+                      onClick={onLearnClick}
+                    >
+                      Review Lesson
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
-
-
           </div>
 
-          {/* Code Editor */}
-          <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-lg">
-            {/* Editor Header */}
-            <div className="bg-gray-800 rounded-t-2xl p-4 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                </div>
-                <span className="text-gray-300 text-sm font-medium">Challenge Editor</span>
-                <Badge className="bg-blue-600 text-white text-xs">
-                  <Flame className="w-3 h-3 mr-1" />
-                  Challenge Mode
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleCopyCode}
-                  className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleResetCode}
-                  className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={toggleFullscreen}
-                  className="text-gray-400 hover:text-white hover:bg-gray-700 p-2"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </Button>
-              </div>
+          {/* Bottom Section: Action Buttons */}
+          <div className="p-6 border-t-2 border-white flex justify-between items-center">
+            <div className="flex items-center space-x-4 text-sm text-gray-600">
+              <Trophy className="w-5 h-5 text-blue-500" />
+              <span>Challenge 1 of 5</span>
+              <span>•</span>
+              <span className="text-blue-600 font-medium">Keep going! 💪</span>
             </div>
             
-            {/* Code Editor with Syntax Highlighting */}
-            <div className="relative">
-              <CodeEditor
-                value={code}
-                onChange={setCode}
-                placeholder="# Write your challenge solution here..."
-                minHeight={isFullscreen ? '600px' : '450px'}
-                showLineNumbers={true}
-              />
-              
-              {/* Status Indicator */}
-              <div className="absolute top-4 right-4 z-10">
-                <div className="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded-full">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                  <span className="text-gray-400 text-xs">Challenge Active</span>
-                </div>
-              </div>
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="outline"
+                className="px-6 py-3 rounded-xl text-gray-600 border-gray-300 hover:bg-gray-50"
+              >
+                Save Progress
+              </Button>
+              <Button 
+                onClick={handleRunCode}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200"
+              >
+                <Play className="w-5 h-5" />
+                <span>Submit Challenge</span>
+              </Button>
             </div>
-
-            {/* Editor Controls */}
-            <div className="flex justify-between items-center mt-6">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <span>Lines: {lineCount}</span>
-                <span>•</span>
-                <span>Characters: {code.length}</span>
-                <span>•</span>
-                <span className="text-blue-600 font-medium">Challenge Mode</span>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline"
-                  className="px-6 py-3 rounded-xl text-gray-600 border-gray-300 hover:bg-gray-50"
-                >
-                  Save Progress
-                </Button>
-                <Button 
-                  onClick={handleRunCode}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200"
-                >
-                  <Play className="w-5 h-5" />
-                  <span>Submit Challenge</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Output Panel */}
-          <div className="lg:col-span-1 bg-white rounded-3xl p-8 shadow-lg h-fit">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">Test Results</h3>
-              <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${hasRun ? 'bg-green-500' : 'bg-orange-500 animate-pulse'}`}></div>
-                <span className="text-sm text-gray-600">{hasRun ? 'Complete' : 'Waiting'}</span>
-              </div>
-            </div>
-            
-            {/* Test Console */}
-            <div className="bg-gray-900 rounded-2xl p-4 mb-6 min-h-[300px]">
-              <div className="text-green-400 font-mono text-sm">
-                {!hasRun ? (
-                  <div className="text-gray-500">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span>▶</span>
-                      <span>Submit your challenge solution...</span>
-                    </div>
-                    <div className="text-blue-400 mt-4">
-                      ⏱️ Timer: {formatTime(timeLeft)}
-                    </div>
-                    <div className="w-2 h-4 bg-blue-400 animate-pulse inline-block mt-2"></div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="text-blue-400"># Running challenge tests...</div>
-                    <div className="mt-2 space-y-1">
-                      {currentChallenge?.testCases && currentChallenge.testCases.length > 0 ? (
-                        <div className="text-gray-300">
-                          <div className="mb-2">Test Case Results:</div>
-                          {currentChallenge.testCases.map((testCase, index) => (
-                            <div key={index} className="mb-3">
-                              <div className="text-yellow-400">Test {index + 1}:</div>
-                              {testCase.input && <div className="text-gray-400">Input: {testCase.input}</div>}
-                              <div className="text-green-400">Expected: {testCase.expectedOutput}</div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-green-400">Test output will appear here...</div>
-                      )}
-                    </div>
-                    <div className="mt-4 text-gray-500">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        <span>All tests passed! 🎉</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {hasRun && (
-              <div className="bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-200 rounded-2xl p-6 text-center">
-                <div className="flex items-center justify-center space-x-2 text-blue-700 mb-3">
-                  <Trophy className="w-6 h-6" />
-                  <span className="font-semibold text-lg">Challenge Complete! 🏆</span>
-                </div>
-                <div className="text-gray-700 text-sm mb-4">
-                  <div className="font-semibold">Final Score: {score} points</div>
-                  <div>Time Bonus: {Math.floor(timeLeft / 10)} pts</div>
-                </div>
-                <div className="flex space-x-3 justify-center">
-                  <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-base"
-                    onClick={onQuizClick}
-                  >
-                    Take Quiz →
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="px-6 py-3 rounded-xl text-base"
-                    onClick={onLearnClick}
-                  >
-                    Review Lesson
-                  </Button>
-                </div>
-              </div>
-            )}
-
-
-          </div>
-        </div>
-
-        {/* Challenge Progress */}
-        <div className="flex justify-center">
-          <div className="flex items-center space-x-4 text-gray-600">
-            <Trophy className="w-5 h-5 text-blue-500" />
-            <span>Challenge 1 of 5</span>
-            <span>•</span>
-            <span className="text-blue-600 font-medium">Difficulty: {difficulty}</span>
           </div>
         </div>
       </div>

@@ -6,7 +6,8 @@ import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import exampleImage from 'figma:asset/92f61c2fba9265b29974c4ad1a13c4c9ada6cd46.png';
 import { getLessonsByModuleId, getModuleById, Lesson, Module } from '../api/data';
-import { CodeEditor } from './CodeEditor';
+import { MonacoEditor } from './MonacoEditor';
+import { usePyodide } from '../hooks/usePyodide';
 import { 
   markLessonCompleted, 
   isLessonCompleted, 
@@ -25,11 +26,32 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
   const [currentModule, setCurrentModule] = useState<Module | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [codeOutputs, setCodeOutputs] = useState<Record<number, string>>({});
-  const [runningCode, setRunningCode] = useState<Record<number, boolean>>({});
-  const [editedCode, setEditedCode] = useState<Record<number, string>>({});
+  const [codeOutputs, setCodeOutputs] = useState<Record<number | string, string>>({});
+  const [runningCode, setRunningCode] = useState<Record<number | string, boolean>>({});
+  const [editedCode, setEditedCode] = useState<Record<number | string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [, forceUpdate] = useState({}); // For forcing re-render when progress changes
+  const [practiceMode, setPracticeMode] = useState<Record<string, boolean>>({}); // Track practice mode for each example
+  const [currentRunningKey, setCurrentRunningKey] = useState<number | string | null>(null); // Track which editor is running
+  
+  // Pyodide for real Python execution
+  const { isLoading: pyodideLoading, isRunning, output: pyodideOutput, runCode: executePython } = usePyodide();
+
+  // Capture Pyodide output when code finishes running
+  useEffect(() => {
+    if (!isRunning && currentRunningKey !== null && pyodideOutput) {
+      // Code just finished running - capture the output
+      setCodeOutputs(prev => ({
+        ...prev,
+        [currentRunningKey]: pyodideOutput
+      }));
+      setRunningCode(prev => ({
+        ...prev,
+        [currentRunningKey]: false
+      }));
+      setCurrentRunningKey(null);
+    }
+  }, [isRunning, pyodideOutput, currentRunningKey]);
 
   useEffect(() => {
     // Reset loading state when moduleId changes
@@ -64,17 +86,14 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
     setEditedCode({});
   }, [currentLessonIndex]);
 
-  const runPythonCode = async (code: string, exampleIndex: number) => {
+  const runPythonCode = async (code: string, exampleIndex: number | string) => {
     setRunningCode({ ...runningCode, [exampleIndex]: true });
     setCodeOutputs({ ...codeOutputs, [exampleIndex]: '🚀 Running your code...\n' });
+    setCurrentRunningKey(exampleIndex);
 
     try {
-      // Simulate Python code execution
-      // In a real implementation, you would use Skulpt or Pyodide
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const output = simulatePythonExecution(code);
-      setCodeOutputs({ ...codeOutputs, [exampleIndex]: output });
+      // Run real Python code using Pyodide
+      await executePython(code);
     } catch (error) {
       setCodeOutputs({ 
         ...codeOutputs, 
@@ -85,212 +104,11 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
     }
   };
 
-  const simulatePythonExecution = (code: string): string => {
-    let output = '';
-    const variables: Record<string, any> = {};
-    
-    try {
-      // Remove comments and split into lines
-      const lines = code.split('\n').map(line => {
-        const commentIndex = line.indexOf('#');
-        return commentIndex >= 0 ? line.substring(0, commentIndex) : line;
-      }).filter(line => line.trim().length > 0);
-      
-      for (const line of lines) {
-        const trimmed = line.trim();
-        
-        // Handle input() - simulate with default values
-        if (trimmed.includes('input(')) {
-          const match = trimmed.match(/(\w+)\s*=\s*input\((.*)\)/);
-          if (match) {
-            const varName = match[1];
-            const prompt = match[2].replace(/['"]/g, '');
-            // Use a simulated default value
-            const simulatedInput = prompt.includes('name') ? 'Alex' : 
-                                  prompt.includes('age') ? '10' : 
-                                  prompt.includes('color') ? 'blue' : 
-                                  'example';
-            variables[varName] = simulatedInput;
-            output += `${prompt} ${simulatedInput}\n`;
-          }
-          continue;
-        }
-        
-        // Handle variable assignment
-        if (trimmed.includes('=') && !trimmed.includes('==') && !trimmed.startsWith('print')) {
-          const parts = trimmed.split('=');
-          if (parts.length >= 2) {
-            const varName = parts[0].trim();
-            const value = evaluateExpression(parts.slice(1).join('=').trim(), variables);
-            variables[varName] = value;
-          }
-          continue;
-        }
-        
-        // Handle print statements
-        if (trimmed.startsWith('print(')) {
-          const match = trimmed.match(/print\((.*)\)/);
-          if (match) {
-            const args = match[1];
-            const result = evaluateExpression(args, variables);
-            output += result + '\n';
-          }
-        }
-      }
-      
-      if (!output) {
-        output = '✅ Code executed successfully! (No output to display)\n';
-      }
-      
-      return '✅ Success!\n\n' + output;
-    } catch (error) {
-      return `❌ Error: ${error instanceof Error ? error.message : 'Something went wrong!'}\n\nDon't worry, errors help us learn! 💪\nTry checking your code for typos or missing quotes.`;
-    }
-  };
-
-  const evaluateExpression = (expr: string, variables: Record<string, any>): string => {
-    expr = expr.trim();
-    
-    // Handle multiple arguments (comma-separated) - split carefully to avoid splitting inside strings
-    if (expr.includes(',')) {
-      const parts: string[] = [];
-      let current = '';
-      let inString = false;
-      let stringChar = '';
-      
-      for (let i = 0; i < expr.length; i++) {
-        const char = expr[i];
-        if ((char === '"' || char === "'") && (i === 0 || expr[i-1] !== '\\')) {
-          if (!inString) {
-            inString = true;
-            stringChar = char;
-          } else if (char === stringChar) {
-            inString = false;
-          }
-        }
-        
-        if (char === ',' && !inString) {
-          parts.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      if (current) parts.push(current.trim());
-      
-      if (parts.length > 1) {
-        return parts.map(part => evaluateExpression(part, variables)).join(' ');
-      }
-    }
-    
-    // Handle string literals with quotes
-    if ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'"))) {
-      return expr.slice(1, -1);
-    }
-    
-    // Handle f-strings (simplified)
-    if (expr.startsWith('f"') || expr.startsWith("f'")) {
-      let str = expr.slice(2, -1);
-      // Replace {variable} with actual values
-      const matches = str.match(/\{([^}]+)\}/g);
-      if (matches) {
-        matches.forEach(match => {
-          const varName = match.slice(1, -1);
-          const value = variables[varName] ?? varName;
-          str = str.replace(match, String(value));
-        });
-      }
-      return str;
-    }
-    
-    // Handle variable references
-    if (variables.hasOwnProperty(expr)) {
-      return String(variables[expr]);
-    }
-    
-    // Handle numbers
-    if (!isNaN(Number(expr))) {
-      return String(expr);
-    }
-    
-    // Handle int() conversion
-    if (expr.startsWith('int(')) {
-      const inner = expr.slice(4, -1);
-      const value = evaluateExpression(inner, variables);
-      return String(Math.floor(Number(value)));
-    }
-    
-    // Handle str() conversion
-    if (expr.startsWith('str(')) {
-      const inner = expr.slice(4, -1);
-      return evaluateExpression(inner, variables);
-    }
-    
-    // Handle len() function
-    if (expr.startsWith('len(')) {
-      const inner = expr.slice(4, -1);
-      const value = evaluateExpression(inner, variables);
-      return String(value.length);
-    }
-    
-    // Handle .upper(), .lower(), .title() string methods
-    if (expr.includes('.upper()')) {
-      const varName = expr.replace('.upper()', '').trim();
-      const value = variables[varName] ?? varName;
-      return String(value).toUpperCase();
-    }
-    if (expr.includes('.lower()')) {
-      const varName = expr.replace('.lower()', '').trim();
-      const value = variables[varName] ?? varName;
-      return String(value).toLowerCase();
-    }
-    if (expr.includes('.title()')) {
-      const varName = expr.replace('.title()', '').trim();
-      const value = variables[varName] ?? varName;
-      return String(value).replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-    }
-    
-    // Handle simple math expressions with variables
-    try {
-      let evalExpr = expr;
-      // Replace variables in the expression
-      Object.keys(variables).forEach(varName => {
-        const regex = new RegExp(`\\b${varName}\\b`, 'g');
-        evalExpr = evalExpr.replace(regex, String(variables[varName]));
-      });
-      
-      // Check if it's a safe math expression
-      if (/^[\d\s+\-*/(). ]+$/.test(evalExpr)) {
-        const result = eval(evalExpr);
-        return String(result);
-      }
-    } catch {
-      // Continue to default return
-    }
-    
-    // Handle string concatenation with +
-    if (expr.includes('+') && !expr.match(/^\d+\s*\+/)) {
-      const parts = expr.split('+').map(part => {
-        const trimmed = part.trim();
-        if (trimmed.startsWith('"') || trimmed.startsWith("'")) {
-          return trimmed.slice(1, -1);
-        }
-        if (variables.hasOwnProperty(trimmed)) {
-          return String(variables[trimmed]);
-        }
-        return trimmed;
-      });
-      return parts.join('');
-    }
-    
-    return expr;
-  };
-
-  const handleCodeChange = (index: number, newCode: string) => {
+  const handleCodeChange = (index: number | string, newCode: string) => {
     setEditedCode({ ...editedCode, [index]: newCode });
   };
 
-  const resetCode = (index: number, originalCode: string) => {
+  const resetCode = (index: number | string, originalCode: string) => {
     const newEdited = { ...editedCode };
     delete newEdited[index];
     setEditedCode(newEdited);
@@ -467,21 +285,241 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                           </p>
                         ))}
 
-                        {/* Code Examples */}
+                        {/* Code Examples - Interactive with Toggle */}
                         {currentLesson.content.codeExamples && currentLesson.content.codeExamples.length > 0 && (
                           <div className="my-6 space-y-6">
-                            <h3 className="text-xl font-bold text-gray-800">Code Examples</h3>
-                            {currentLesson.content.codeExamples.map((example, index) => (
-                              <div key={index} className="border-2 border-blue-200 rounded-2xl p-4 bg-blue-50">
-                                <h4 className="font-bold text-gray-800 mb-2">{example.title}</h4>
-                                <div className="bg-gray-900 rounded-xl p-4 mb-3">
-                                  <pre className="text-green-400 text-sm overflow-x-auto">
-                                    <code>{example.code}</code>
-                                  </pre>
-                                </div>
-                                <p className="text-gray-600 text-sm">{example.explanation}</p>
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="bg-blue-100 p-3 rounded-xl">
+                                <Code className="w-8 h-8 text-blue-600" />
                               </div>
-                            ))}
+                              <div>
+                                <h3 className="text-2xl font-bold text-gray-800">Code Examples</h3>
+                                <p className="text-gray-600">See these examples in action! Try them yourself.</p>
+                              </div>
+                            </div>
+                            {currentLesson.content.codeExamples.map((example, exampleIndex) => {
+                              const exampleKey = `${currentLessonIndex}-example-${exampleIndex}`;
+                              const isPracticeMode = practiceMode[exampleKey] || false;
+                              const practiceCodeKey = `${exampleKey}-practice`;
+                              
+                              return (
+                                <Card 
+                                  key={exampleIndex} 
+                                  className={`p-6 rounded-3xl shadow-lg border-2 ${
+                                    isPracticeMode 
+                                      ? 'border-green-200 bg-gradient-to-br from-green-50 to-white' 
+                                      : 'border-blue-200 bg-gradient-to-br from-blue-50 to-white'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between mb-4">
+                                    <div className="flex-1">
+                                      <h4 className="text-xl font-bold text-gray-800 mb-2">{example.title}</h4>
+                                      {!isPracticeMode && (
+                                        <p className="text-gray-700">{example.explanation}</p>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Toggle Button */}
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        setPracticeMode({ ...practiceMode, [exampleKey]: !isPracticeMode });
+                                        // Reset code when switching modes
+                                        if (!isPracticeMode) {
+                                          // Switching to practice mode - clear the practice code
+                                          const newEdited = { ...editedCode };
+                                          delete newEdited[practiceCodeKey];
+                                          setEditedCode(newEdited);
+                                        }
+                                      }}
+                                      className={`${
+                                        isPracticeMode
+                                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                          : 'bg-green-600 hover:bg-green-700 text-white'
+                                      } shrink-0 ml-4`}
+                                    >
+                                      {isPracticeMode ? '👁️ View Example' : '✏️ Now Try This!'}
+                                    </Button>
+                                  </div>
+
+                                  {/* Practice Mode Instructions */}
+                                  {isPracticeMode && (() => {
+                                    // Try to find a matching practice exercise
+                                    const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
+                                    
+                                    return (
+                                      <div className="mb-4 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                                        <h5 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                                          <Lightbulb className="w-5 h-5" />
+                                          Now Try This:
+                                        </h5>
+                                        
+                                        {matchingExercise ? (
+                                          <>
+                                            <p className="text-blue-700 mb-3 font-medium">
+                                              {matchingExercise.description}
+                                            </p>
+                                            
+                                            {/* Step-by-step instructions */}
+                                            <div className="bg-white border border-blue-200 rounded-lg p-3 mb-3">
+                                              <p className="text-blue-800 font-medium mb-2">📝 Steps:</p>
+                                              <ol className="space-y-1">
+                                                {matchingExercise.instructions.map((instruction, i) => (
+                                                  <li key={i} className="text-blue-700 flex items-start gap-2 text-sm">
+                                                    <span className="text-blue-500 font-bold">{i + 1}.</span>
+                                                    <span>{instruction}</span>
+                                                  </li>
+                                                ))}
+                                              </ol>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <p className="text-blue-700 mb-3">
+                                            Now it's your turn! Try writing similar code with your own values. Can you modify the example to create something new?
+                                          </p>
+                                        )}
+                                        
+                                        {/* Hints */}
+                                        <div className="mt-3">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              const hintKey = `hints-${exampleKey}`;
+                                              setEditedCode({ ...editedCode, [hintKey]: editedCode[hintKey] === 'shown' ? 'hidden' : 'shown' });
+                                            }}
+                                            className="border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800"
+                                          >
+                                            {editedCode[`hints-${exampleKey}`] === 'shown' ? '🙈 Hide Hint' : '💡 Show Hint'}
+                                          </Button>
+
+                                          {editedCode[`hints-${exampleKey}`] === 'shown' && (
+                                            <div className="mt-3 bg-yellow-50 border-2 border-yellow-200 rounded-xl p-3">
+                                              {matchingExercise?.hints && matchingExercise.hints.length > 0 ? (
+                                                <div>
+                                                  <p className="text-yellow-800 font-medium mb-2">💡 Hints:</p>
+                                                  <ul className="space-y-1">
+                                                    {matchingExercise.hints.map((hint, i) => (
+                                                      <li key={i} className="text-yellow-700 flex items-start gap-2 text-sm">
+                                                        <span className="text-yellow-600">✦</span>
+                                                        <span>{hint}</span>
+                                                      </li>
+                                                    ))}
+                                                  </ul>
+                                                </div>
+                                              ) : (
+                                                <p className="text-yellow-700">
+                                                  💡 <strong>Hint:</strong> Look at the example above and try to understand each line. Start by copying the structure, then change the values to make it your own!
+                                                </p>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
+                                  
+                                  {/* Code Editor */}
+                                  <div className="bg-gray-900 rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <span className={`${isPracticeMode ? 'text-green-400' : 'text-blue-400'} font-medium flex items-center gap-2`}>
+                                        <Code className="w-5 h-5" />
+                                        {isPracticeMode ? 'Practice Editor' : 'Python Code'}
+                                      </span>
+                                      <div className="flex gap-2">
+                                        <Button 
+                                          size="sm" 
+                                          className={`${isPracticeMode ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                          onClick={() => {
+                                            const codeKey = isPracticeMode ? practiceCodeKey : exampleKey;
+                                            const code = isPracticeMode 
+                                              ? (editedCode[practiceCodeKey] || '') 
+                                              : (editedCode[exampleKey] || example.code);
+                                            runPythonCode(code, codeKey);
+                                          }}
+                                          disabled={runningCode[isPracticeMode ? practiceCodeKey : exampleKey]}
+                                        >
+                                          {runningCode[isPracticeMode ? practiceCodeKey : exampleKey] ? (
+                                            <>
+                                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                              Running...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Play className="w-4 h-4 mr-1" />
+                                              Run Code
+                                            </>
+                                          )}
+                                        </Button>
+                                        <Button 
+                                          size="sm" 
+                                          variant="outline"
+                                          className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
+                                          onClick={() => {
+                                            const codeKey = isPracticeMode ? practiceCodeKey : exampleKey;
+                                            resetCode(codeKey, isPracticeMode ? '' : example.code);
+                                          }}
+                                        >
+                                          <RotateCcw className="w-4 h-4 mr-1" />
+                                          Reset
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    
+                                    <MonacoEditor
+                                      value={
+                                        isPracticeMode 
+                                          ? (editedCode[practiceCodeKey] || '# Write your code here\n\n') 
+                                          : (editedCode[exampleKey] || example.code)
+                                      }
+                                      onChange={(newCode) => {
+                                        const codeKey = isPracticeMode ? practiceCodeKey : exampleKey;
+                                        handleCodeChange(codeKey, newCode);
+                                      }}
+                                      language="python"
+                                      theme="vs-dark"
+                                      height="250px"
+                                    />
+                                  </div>
+
+                                  {/* Output Console */}
+                                  {(codeOutputs[isPracticeMode ? practiceCodeKey : exampleKey]) && (
+                                    <div className="mt-4 bg-gray-900 rounded-2xl p-6">
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <Terminal className="w-5 h-5 text-green-400" />
+                                        <span className="text-green-400 font-medium">Output:</span>
+                                      </div>
+                                      <pre className="text-gray-300 whitespace-pre-wrap font-mono text-sm">
+                                        {codeOutputs[isPracticeMode ? practiceCodeKey : exampleKey]}
+                                      </pre>
+                                    </div>
+                                  )}
+
+                                  {/* Expected Output - Only in Practice Mode */}
+                                  {isPracticeMode && (() => {
+                                    const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
+                                    
+                                    return (
+                                      <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-2xl p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <CheckCircle className="w-5 h-5 text-green-600" />
+                                          <span className="text-green-800 font-medium">Expected Output:</span>
+                                        </div>
+                                        {matchingExercise?.expectedOutput ? (
+                                          <pre className="text-green-900 whitespace-pre-wrap font-mono text-sm bg-white p-3 rounded-lg">
+                                            {matchingExercise.expectedOutput}
+                                          </pre>
+                                        ) : (
+                                          <p className="text-green-700 text-sm">
+                                            Run the code in "View Example" mode to see what the output should look like!
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+                                </Card>
+                              );
+                            })}
                           </div>
                         )}
 
@@ -502,93 +540,10 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                             </ul>
                           </div>
                         )}
+
+
                       </div>
-                      
-                      {/* Code Example Section */}
-                      {currentLesson.codeExample && (
-                        <div className="mt-6">
-                          <h3 className="text-xl font-bold text-gray-800 mb-3">Try it yourself!</h3>
-                          
-                          {/* Tip Box */}
-                          <div className="mb-4 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                            <div className="flex items-start gap-3">
-                              <span className="text-2xl">💡</span>
-                              <div>
-                                <p className="text-blue-800 font-medium">Interactive Code Editor</p>
-                                <p className="text-blue-700 text-sm mt-1">
-                                  You can edit the code and click "Run Code" to see what happens! Don't be afraid to experiment! 🚀
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="bg-gray-900 rounded-2xl p-6">
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-green-400 font-medium">Python Code</span>
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                  onClick={() => runPythonCode(editedCode[currentLessonIndex] || currentLesson.codeExample || '', currentLessonIndex)}
-                                  disabled={runningCode[currentLessonIndex]}
-                                >
-                                  {runningCode[currentLessonIndex] ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                      Running...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Play className="w-4 h-4 mr-1" />
-                                      Run Code
-                                    </>
-                                  )}
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
-                                  onClick={() => resetCode(currentLessonIndex, currentLesson.codeExample || '')}
-                                >
-                                  <RotateCcw className="w-4 h-4 mr-1" />
-                                  Reset
-                                </Button>
-                              </div>
-                            </div>
-                            
-                            <CodeEditor
-                              code={editedCode[currentLessonIndex] || currentLesson.codeExample || ''}
-                              onChange={(newCode) => handleCodeChange(currentLessonIndex, newCode)}
-                            />
-                          </div>
-                          
-                          {/* Output */}
-                          {codeOutputs[currentLessonIndex] && (
-                            <div className="mt-4 bg-gray-900 rounded-2xl p-6">
-                              <div className="flex items-center gap-2 mb-3">
-                                <Terminal className="w-5 h-5 text-green-400" />
-                                <span className="text-green-400 font-medium">Output:</span>
-                              </div>
-                              <pre className="text-gray-300 whitespace-pre-wrap font-mono text-sm">
-                                {codeOutputs[currentLessonIndex]}
-                              </pre>
-                            </div>
-                          )}
-                          
-                          {/* Expected Output */}
-                          {currentLesson.expectedOutput && (
-                            <div className="mt-4 bg-blue-50 rounded-2xl p-6 border-2 border-blue-200">
-                              <div className="flex items-center gap-2 mb-3">
-                                <Star className="w-5 h-5 text-blue-600" />
-                                <span className="text-blue-800 font-medium">Expected Output:</span>
-                              </div>
-                              <pre className="text-blue-900 whitespace-pre-wrap font-mono text-sm">
-                                {currentLesson.expectedOutput}
-                              </pre>
-                            </div>
-                          )}
-                        </div>
-                      )}
+
                     </div>
                   </div>
                 </Card>

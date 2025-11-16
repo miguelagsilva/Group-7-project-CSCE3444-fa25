@@ -34,6 +34,7 @@ export interface LessonContent {
   videoUrl?: string; // YouTube video URL to explain the concept
   mainContent: string[];
   codeExamples?: CodeExample[];
+  practiceExercises?: PracticeExercise[];
   keyPoints?: string[];
 }
 
@@ -41,6 +42,17 @@ export interface CodeExample {
   title: string;
   code: string;
   explanation: string;
+}
+
+export interface PracticeExercise {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string[];
+  starterCode: string;
+  hints?: string[];
+  expectedOutput?: string;
+  solution?: string;
 }
 
 export interface PracticeProblem {
@@ -268,6 +280,44 @@ print("I'm learning Python!")`,
         'Use print() to display messages',
         'Comments start with # and help explain your code',
         'Python reads your code from top to bottom'
+      ],
+      practiceExercises: [
+        {
+          id: 'practice-m1-1-1',
+          title: '🎯 Practice: Your First Message',
+          description: 'Let\'s practice using the print() function! Write code to display your own message.',
+          instructions: [
+            'Use the print() function to display a message',
+            'Type your message inside quotes',
+            'Try printing your name and a fun fact about yourself!'
+          ],
+          starterCode: `# Write your code below this line\n# Use print() to display your name\n\n`,
+          hints: [
+            'Remember to put your text inside quotes: print("your message")',
+            'You can use multiple print() statements',
+            'Don\'t forget the parentheses ()'
+          ],
+          expectedOutput: 'Hello! My name is [Your Name]\nI love [Your Hobby]!',
+          solution: `# Write your code below this line\n# Use print() to display your name\n\nprint("Hello! My name is Alex")\nprint("I love coding!")`
+        },
+        {
+          id: 'practice-m1-1-2',
+          title: '🎨 Practice: Fun with Emojis',
+          description: 'Make your messages more fun by adding emojis! Print a message with at least 2 emojis.',
+          instructions: [
+            'Use print() to display a message',
+            'Include at least 2 emojis in your message',
+            'Get creative with your message!'
+          ],
+          starterCode: `# Create a fun message with emojis!\n# Example emojis: 🎮 🚀 🎨 🌟 💻 🐍\n\n`,
+          hints: [
+            'Emojis go inside the quotes just like regular text',
+            'Try: print("🚀 Python is awesome! 💻")',
+            'You can use any emojis you like!'
+          ],
+          expectedOutput: '🚀 I\'m learning to code! 💻',
+          solution: `# Create a fun message with emojis!\n# Example emojis: 🎮 🚀 🎨 🌟 💻 🐍\n\nprint("🚀 I'm learning to code! 💻")\nprint("🐍 Python is fun! 🌟")`
+        }
       ]
     }
   },
