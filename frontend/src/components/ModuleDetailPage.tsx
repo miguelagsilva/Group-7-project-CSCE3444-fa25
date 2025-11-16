@@ -7,6 +7,12 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import exampleImage from 'figma:asset/92f61c2fba9265b29974c4ad1a13c4c9ada6cd46.png';
 import { getLessonsByModuleId, getModuleById, Lesson, Module } from '../api/data';
 import { CodeEditor } from './CodeEditor';
+import { 
+  markLessonCompleted, 
+  isLessonCompleted, 
+  setCurrentLesson,
+  markModuleCompleted 
+} from '../utils/progressManager';
 
 interface ModuleDetailPageProps {
   moduleId: string;
@@ -23,6 +29,7 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
   const [runningCode, setRunningCode] = useState<Record<number, boolean>>({});
   const [editedCode, setEditedCode] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [, forceUpdate] = useState({}); // For forcing re-render when progress changes
 
   useEffect(() => {
     // Reset loading state when moduleId changes
@@ -279,6 +286,19 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
     return expr;
   };
 
+  const handleCodeChange = (index: number, newCode: string) => {
+    setEditedCode({ ...editedCode, [index]: newCode });
+  };
+
+  const resetCode = (index: number, originalCode: string) => {
+    const newEdited = { ...editedCode };
+    delete newEdited[index];
+    setEditedCode(newEdited);
+    const newOutputs = { ...codeOutputs };
+    delete newOutputs[index];
+    setCodeOutputs(newOutputs);
+  };
+
   const currentLesson = lessons[currentLessonIndex];
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 relative overflow-hidden">
@@ -414,164 +434,159 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                     </div>
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold text-gray-800 mb-4">{currentLesson.title}</h2>
-                      <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                        {currentLesson.content.introduction}
-                      </p>
                       
-                      {currentLesson.content.mainContent.map((paragraph, index) => (
-                        <p key={index} className="text-lg text-gray-600 mb-4 leading-relaxed">
-                          {paragraph}
-                        </p>
-                      ))}
-                      
-                      {/* Video Embed Section */}
-                      {currentLesson.content.videoUrl && (
-                        <div className="my-8 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="text-3xl">🎥</div>
-                            <h3 className="text-xl font-bold text-purple-800">Watch & Learn</h3>
-                          </div>
-                          <div className="relative w-full rounded-xl overflow-hidden shadow-2xl" style={{ paddingBottom: '56.25%' }}>
+                      {/* Render lesson content properly */}
+                      <div className="prose prose-lg max-w-none">
+                        {/* Introduction */}
+                        {currentLesson.content.introduction && (
+                          <p className="text-lg text-gray-700 mb-6 leading-relaxed font-medium">
+                            {currentLesson.content.introduction}
+                          </p>
+                        )}
+
+                        {/* Video if available */}
+                        {currentLesson.content.videoUrl && (
+                          <div className="my-6 rounded-2xl overflow-hidden shadow-lg">
                             <iframe
-                              className="absolute top-0 left-0 w-full h-full"
+                              width="100%"
+                              height="400"
                               src={currentLesson.content.videoUrl}
-                              title="Python Tutorial Video"
+                              title={currentLesson.title}
                               frameBorder="0"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
-                            />
+                              className="w-full"
+                            ></iframe>
                           </div>
-                          <p className="text-center text-purple-700 mt-4 font-medium">
-                            📺 Watch this video to understand the concept better! 🌟
+                        )}
+
+                        {/* Main Content */}
+                        {currentLesson.content.mainContent && currentLesson.content.mainContent.map((paragraph, index) => (
+                          <p key={index} className="text-lg text-gray-600 mb-4 leading-relaxed">
+                            {paragraph}
                           </p>
-                        </div>
-                      )}
+                        ))}
+
+                        {/* Code Examples */}
+                        {currentLesson.content.codeExamples && currentLesson.content.codeExamples.length > 0 && (
+                          <div className="my-6 space-y-6">
+                            <h3 className="text-xl font-bold text-gray-800">Code Examples</h3>
+                            {currentLesson.content.codeExamples.map((example, index) => (
+                              <div key={index} className="border-2 border-blue-200 rounded-2xl p-4 bg-blue-50">
+                                <h4 className="font-bold text-gray-800 mb-2">{example.title}</h4>
+                                <div className="bg-gray-900 rounded-xl p-4 mb-3">
+                                  <pre className="text-green-400 text-sm overflow-x-auto">
+                                    <code>{example.code}</code>
+                                  </pre>
+                                </div>
+                                <p className="text-gray-600 text-sm">{example.explanation}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Key Points */}
+                        {currentLesson.content.keyPoints && currentLesson.content.keyPoints.length > 0 && (
+                          <div className="my-6 bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                              <span>🔑</span>
+                              Key Points to Remember
+                            </h3>
+                            <ul className="space-y-2">
+                              {currentLesson.content.keyPoints.map((point, index) => (
+                                <li key={index} className="text-gray-700 flex items-start gap-2">
+                                  <span className="text-yellow-600 font-bold">•</span>
+                                  <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                       
-                      {/* Code Examples */}
-                      {currentLesson.content.codeExamples && currentLesson.content.codeExamples.map((example, index) => (
-                        <div key={index} className="mt-6">
-                          <h3 className="text-xl font-bold text-gray-800 mb-3">{example.title}</h3>
+                      {/* Code Example Section */}
+                      {currentLesson.codeExample && (
+                        <div className="mt-6">
+                          <h3 className="text-xl font-bold text-gray-800 mb-3">Try it yourself!</h3>
                           
                           {/* Tip Box */}
-                          {index === 0 && (
-                            <div className="mb-4 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                              <div className="flex items-start gap-3">
-                                <span className="text-2xl">💡</span>
-                                <div>
-                                  <p className="text-blue-800 font-medium">Try it yourself!</p>
-                                  <p className="text-blue-700 text-sm mt-1">
-                                    You can edit the code and click "Run Code" to see what happens! Don't be afraid to experiment! 🚀
-                                  </p>
-                                </div>
+                          <div className="mb-4 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">💡</span>
+                              <div>
+                                <p className="text-blue-800 font-medium">Interactive Code Editor</p>
+                                <p className="text-blue-700 text-sm mt-1">
+                                  You can edit the code and click "Run Code" to see what happens! Don't be afraid to experiment! 🚀
+                                </p>
                               </div>
                             </div>
-                          )}
+                          </div>
                           
                           <div className="bg-gray-900 rounded-2xl p-6">
                             <div className="flex items-center justify-between mb-4">
-                              <span className="text-green-400 font-medium">Python Code (with Syntax Highlighting)</span>
+                              <span className="text-green-400 font-medium">Python Code</span>
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
                                   className="bg-blue-600 hover:bg-blue-700"
-                                  onClick={() => runPythonCode(editedCode[index] || example.code, index)}
-                                  disabled={runningCode[index]}
+                                  onClick={() => runPythonCode(editedCode[currentLessonIndex] || currentLesson.codeExample || '', currentLessonIndex)}
+                                  disabled={runningCode[currentLessonIndex]}
                                 >
-                                  {runningCode[index] ? (
+                                  {runningCode[currentLessonIndex] ? (
                                     <>
-                                      <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                       Running...
                                     </>
                                   ) : (
                                     <>
-                                      <Play className="w-4 h-4 mr-2" />
+                                      <Play className="w-4 h-4 mr-1" />
                                       Run Code
                                     </>
                                   )}
                                 </Button>
-                                {editedCode[index] && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline"
-                                    className="border-yellow-500 text-yellow-400 hover:bg-yellow-500 hover:text-white"
-                                    onClick={() => {
-                                      const newEdited = { ...editedCode };
-                                      delete newEdited[index];
-                                      setEditedCode(newEdited);
-                                      const newOutputs = { ...codeOutputs };
-                                      delete newOutputs[index];
-                                      setCodeOutputs(newOutputs);
-                                    }}
-                                  >
-                                    <RotateCcw className="w-3 h-3 mr-1" />
-                                    Reset
-                                  </Button>
-                                )}
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
+                                  onClick={() => resetCode(currentLessonIndex, currentLesson.codeExample || '')}
+                                >
+                                  <RotateCcw className="w-4 h-4 mr-1" />
+                                  Reset
+                                </Button>
                               </div>
                             </div>
-                            <div className="relative">
-                              <CodeEditor
-
-                                rows={Math.max(example.code.split('\n').length, 3)}
-                                value={editedCode[index] !== undefined ? editedCode[index] : example.code}
-                                onChange={(newCode) => setEditedCode({ ...editedCode, [index]: newCode })}
-                                spellCheck={false}
-                                placeholder="# Write your Python code here..."
-minHeight="150px"
-                                 showLineNumbers={false}
-                              />
-                              {editedCode[index] && editedCode[index] !== example.code && (
-                                <div className="absolute top-2 right-2 z-10">
-                                  <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                                    ✏️ Edited
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            
+                            <CodeEditor
+                              code={editedCode[currentLessonIndex] || currentLesson.codeExample || ''}
+                              onChange={(newCode) => handleCodeChange(currentLessonIndex, newCode)}
+                            />
                           </div>
                           
-                          {/* Code Output Console */}
-                          {codeOutputs[index] && (
-                            <div className="mt-4 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border-2 border-green-500 shadow-lg animate-in fade-in duration-300">
-                              <div className="flex items-center gap-2 mb-4">
+                          {/* Output */}
+                          {codeOutputs[currentLessonIndex] && (
+                            <div className="mt-4 bg-gray-900 rounded-2xl p-6">
+                              <div className="flex items-center gap-2 mb-3">
                                 <Terminal className="w-5 h-5 text-green-400" />
-                                <span className="text-green-400 font-bold">Output Console</span>
-                                <div className="flex gap-1 ml-auto">
-                                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                </div>
+                                <span className="text-green-400 font-medium">Output:</span>
                               </div>
-                              <div className="bg-black rounded-lg p-4 min-h-[60px]">
-                                <pre className="text-green-300 text-base whitespace-pre-wrap font-mono leading-relaxed">
-                                  {codeOutputs[index]}
-                                </pre>
-                              </div>
-                              {codeOutputs[index].includes('✅') && (
-                                <div className="mt-3 flex items-center gap-2 text-green-400 text-sm">
-                                  <span>🎉</span>
-                                  <span className="font-medium">Great job! Your code ran successfully!</span>
-                                </div>
-                              )}
+                              <pre className="text-gray-300 whitespace-pre-wrap font-mono text-sm">
+                                {codeOutputs[currentLessonIndex]}
+                              </pre>
                             </div>
                           )}
                           
-                          <p className="text-gray-600 mt-3">{example.explanation}</p>
-                        </div>
-                      ))}
-                      
-                      {/* Key Points */}
-                      {currentLesson.content.keyPoints && currentLesson.content.keyPoints.length > 0 && (
-                        <div className="mt-6 bg-blue-50 p-6 rounded-2xl">
-                          <h3 className="text-xl font-bold text-blue-800 mb-4">🔑 Key Points to Remember</h3>
-                          <ul className="space-y-2">
-                            {currentLesson.content.keyPoints.map((point, index) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-blue-600 mr-2">✓</span>
-                                <span className="text-blue-700">{point}</span>
-                              </li>
-                            ))}
-                          </ul>
+                          {/* Expected Output */}
+                          {currentLesson.expectedOutput && (
+                            <div className="mt-4 bg-blue-50 rounded-2xl p-6 border-2 border-blue-200">
+                              <div className="flex items-center gap-2 mb-3">
+                                <Star className="w-5 h-5 text-blue-600" />
+                                <span className="text-blue-800 font-medium">Expected Output:</span>
+                              </div>
+                              <pre className="text-blue-900 whitespace-pre-wrap font-mono text-sm">
+                                {currentLesson.expectedOutput}
+                              </pre>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -602,9 +617,22 @@ minHeight="150px"
                 {/* Next Lesson / Go to Challenge Button */}
                 <Button 
                   className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200 ml-auto"
-                  onClick={() => {
+                  onClick={async () => {
+                    // Mark current lesson as completed before moving on
+                    if (currentLesson && currentModule) {
+                      await markLessonCompleted(currentLesson.id, currentModule.id);
+                    }
+                    
                     if (currentLessonIndex < lessons.length - 1) {
-                      setCurrentLessonIndex(currentLessonIndex + 1);
+                      // Move to next lesson
+                      const nextLessonIndex = currentLessonIndex + 1;
+                      setCurrentLessonIndex(nextLessonIndex);
+                      
+                      // Track current lesson position
+                      if (currentModule && lessons[nextLessonIndex]) {
+                        setCurrentLesson(currentModule.id, lessons[nextLessonIndex].id, nextLessonIndex);
+                      }
+                      
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     } else {
                       // Last lesson - go to challenge
@@ -634,7 +662,8 @@ minHeight="150px"
               
               <div className="space-y-4">
                 {lessons.map((lesson, index) => {
-                  const isCompleted = lesson.completed;
+                  // Check completion status from progress manager
+                  const isCompleted = isLessonCompleted(lesson.id);
                   const isCurrent = index === currentLessonIndex;
                   const isLocked = !isCompleted && index > currentLessonIndex;
                   

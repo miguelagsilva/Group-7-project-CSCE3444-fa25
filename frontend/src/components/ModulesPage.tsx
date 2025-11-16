@@ -1,22 +1,33 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, CheckCircle, Clock, BarChart3, FileText, GitBranch, RotateCcw, ShoppingCart, Zap } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, BarChart3, FileText, GitBranch, RotateCcw, ShoppingCart, Zap, Award } from 'lucide-react';
 import { Button } from './ui/button';
-import { getModulesByCourseId, Module } from '../api/data';
+import { getModulesByCourseId, getLessonsByModuleId, getQuizByModuleId, Module, Lesson } from '../api/data';
+import { isModuleCompleted, getModuleProgressAsync, getQuizScoreByModule, isQuizCompletedByModule } from '../utils/progressManager';
+
+interface ModuleWithProgress extends Module {
+  progress: number;
+  status: 'completed' | 'in-progress' | 'locked' | 'not-started';
+  quizScore?: number | null;
+  quizAttempted: boolean;
+}
 
 interface ModuleCardProps {
   title: string;
   icon: React.ReactNode;
-  status: 'completed' | 'in-progress' | 'locked';
+  status: 'completed' | 'in-progress' | 'locked' | 'not-started';
   progress?: number;
+  quizScore?: number | null;
+  quizAttempted: boolean;
   onClick?: () => void;
 }
 
-function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardProps) {
+function ModuleCard({ title, icon, status, progress = 0, quizScore = null, quizAttempted, onClick }: ModuleCardProps) {
   const getStatusColor = () => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-700';
       case 'in-progress': return 'bg-blue-100 text-blue-700';
       case 'locked': return 'bg-gray-100 text-gray-500';
+      case 'not-started': return 'bg-blue-100 text-blue-700'; // Blue like in-progress
       default: return 'bg-gray-100 text-gray-500';
     }
   };
@@ -26,6 +37,7 @@ function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardPr
       case 'completed': return 'COMPLETED';
       case 'in-progress': return progress > 0 ? `${progress}% COMPLETE` : 'IN PROGRESS';
       case 'locked': return 'LOCKED';
+      case 'not-started': return 'NOT STARTED';
       default: return 'NOT STARTED';
     }
   };
@@ -40,11 +52,11 @@ function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardPr
       <div className="flex flex-col items-center text-center space-y-6 h-full">
         <div className={`w-24 h-24 rounded-3xl flex items-center justify-center ${
           status === 'completed' ? 'bg-green-100' : 
-          status === 'in-progress' ? 'bg-blue-100' : 'bg-gray-100'
+          status === 'in-progress' || status === 'not-started' ? 'bg-blue-100' : 'bg-gray-100'
         }`}>
           <div className={`${
             status === 'completed' ? 'text-green-600' : 
-            status === 'in-progress' ? 'text-blue-600' : 'text-gray-400'
+            status === 'in-progress' || status === 'not-started' ? 'text-blue-600' : 'text-gray-400'
           }`}>
             {icon}
           </div>
@@ -52,9 +64,18 @@ function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardPr
         
         <h3 className="font-semibold text-gray-800 text-lg leading-tight flex-grow flex items-center">{title}</h3>
         
-        {/* Progress bar container - always present to maintain height */}
+        {/* Progress bar or Quiz Score - takes same space */}
         <div className="w-full h-3">
-          {status === 'in-progress' && progress > 0 ? (
+          {status === 'completed' ? (
+            // Show quiz score for completed modules
+            <div className="flex items-center justify-center gap-2 h-full">
+              <Award className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm font-bold text-gray-700">
+                Quiz: {quizScore !== null ? `${quizScore}%` : 'N/A'}
+              </span>
+            </div>
+          ) : status === 'in-progress' && progress > 0 ? (
+            // Show progress bar for in-progress modules
             <div className="w-full bg-gray-200 rounded-full h-3">
               <div 
                 className="bg-blue-600 h-3 rounded-full transition-all duration-300"
@@ -62,6 +83,7 @@ function ModuleCard({ title, icon, status, progress = 0, onClick }: ModuleCardPr
               ></div>
             </div>
           ) : (
+            // Empty space for not-started and locked modules
             <div className="h-3"></div>
           )}
         </div>
@@ -82,9 +104,57 @@ interface ModulesPageProps {
 
 export function ModulesPage({ onBack, onModuleClick, onFreeCodeClick }: ModulesPageProps) {
   const [modules, setModules] = useState<Module[]>([]);
+  const [modulesWithProgress, setModulesWithProgress] = useState<ModuleWithProgress[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    getModulesByCourseId('python-adventures').then(setModules);
+    const loadModulesWithProgress = async () => {
+      const moduleData = await getModulesByCourseId('python-adventures');
+      setModules(moduleData);
+      
+      // Calculate progress for each module
+      const modulesData = await Promise.all(
+        moduleData.map(async (module) => {
+          const progressData = await getModuleProgressAsync(module.id);
+          
+          let status: 'completed' | 'in-progress' | 'locked' | 'not-started' = 'not-started';
+          if (module.locked) {
+            status = 'locked';
+          } else if (await isModuleCompleted(module.id)) {
+            status = 'completed';
+          } else if (progressData.percentage > 0) {
+            status = 'in-progress';
+          }
+          
+          const quizScore = await getQuizScoreByModule(module.id);
+          const quizAttempted = await isQuizCompletedByModule(module.id);
+          
+          return {
+            ...module,
+            progress: progressData.percentage,
+            status,
+            quizScore,
+            quizAttempted
+          };
+        })
+      );
+      
+      setModulesWithProgress(modulesData);
+    };
+    
+    loadModulesWithProgress();
+  }, [refreshKey]);
+  
+  // Refresh when component becomes visible (user returns from module detail)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        setRefreshKey(prev => prev + 1);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const getIconForModule = (title: string) => {
@@ -99,12 +169,6 @@ export function ModulesPage({ onBack, onModuleClick, onFreeCodeClick }: ModulesP
       "Building Projects": <CheckCircle className="w-12 h-12" />
     };
     return iconMap[title] || <FileText className="w-12 h-12" />;
-  };
-
-  const getModuleStatus = (module: Module): 'completed' | 'in-progress' | 'locked' => {
-    if (module.locked) return 'locked';
-    if (module.completed) return 'completed';
-    return 'in-progress';
   };
 
   return (
@@ -194,13 +258,15 @@ export function ModulesPage({ onBack, onModuleClick, onFreeCodeClick }: ModulesP
           <h2 className="text-xl text-gray-700 mb-10">Your Learning Journey</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {modules.map((module) => (
+            {modulesWithProgress.map((module) => (
               <ModuleCard
                 key={module.id}
                 title={module.title}
                 icon={getIconForModule(module.title)}
-                status={getModuleStatus(module)}
+                status={module.status}
                 progress={module.progress}
+                quizScore={module.quizScore}
+                quizAttempted={module.quizAttempted}
                 onClick={() => {
                   if (!module.locked && onModuleClick) {
                     onModuleClick(module.id);

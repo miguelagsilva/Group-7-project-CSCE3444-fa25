@@ -10,7 +10,6 @@ export interface Course {
   duration: string;
   icon: string;
   available: boolean;
-  progress?: number;
 }
 
 export interface Module {
@@ -19,9 +18,6 @@ export interface Module {
   title: string;
   description: string;
   lessonsCount: number;
-  completed: boolean;
-  locked: boolean;
-  progress: number;
 }
 
 export interface Lesson {
@@ -30,7 +26,6 @@ export interface Lesson {
   title: string;
   type: 'video' | 'interactive' | 'reading';
   duration: string;
-  completed: boolean;
   content: LessonContent;
 }
 
@@ -155,8 +150,7 @@ export const coursesData: Course[] = [
     lessonsCount: 12,
     duration: '4 weeks',
     icon: '🐍',
-    available: true,
-    progress: 45
+    available: true
   },
   {
     id: 'web-wizardry',
@@ -187,80 +181,56 @@ export const modulesData: Module[] = [
     courseId: 'python-adventures',
     title: 'Getting Started with Python',
     description: 'Learn the basics of Python programming',
-    lessonsCount: 4,
-    completed: true,
-    locked: false,
-    progress: 100
+    lessonsCount: 4
   },
   {
     id: 'module-2',
     courseId: 'python-adventures',
     title: 'Variables and Data Types',
     description: 'Discover how to store and use different types of data',
-    lessonsCount: 5,
-    completed: false,
-    locked: false,
-    progress: 60
+    lessonsCount: 5
   },
   {
     id: 'module-3',
     courseId: 'python-adventures',
     title: 'Loops and Conditionals',
     description: 'Make your code smarter with decisions and repetition',
-    lessonsCount: 1,
-    completed: false,
-    locked: false,
-    progress: 0
+    lessonsCount: 1
   },
   {
     id: 'module-4',
     courseId: 'python-adventures',
     title: 'Functions and Methods',
     description: 'Create reusable code blocks',
-    lessonsCount: 1,
-    completed: false,
-    locked: false,
-    progress: 0
+    lessonsCount: 1
   },
   {
     id: 'module-5',
     courseId: 'python-adventures',
     title: 'Lists and Collections',
     description: 'Store multiple items and organize your data',
-    lessonsCount: 1,
-    completed: false,
-    locked: false,
-    progress: 0
+    lessonsCount: 1
   },
   {
     id: 'module-6',
     courseId: 'python-adventures',
     title: 'Loops: For and While',
     description: 'Repeat actions and automate tasks',
-    lessonsCount: 1,
-    completed: false,
-    locked: false,
-    progress: 0
+    lessonsCount: 1
   },
   {
     id: 'module-7',
     courseId: 'python-adventures',
     title: 'Dictionaries and Data',
     description: 'Work with key-value pairs and complex data',
-    lessonsCount: 1,
-    completed: false,
-    locked: false,
-    progress: 0
+    lessonsCount: 1
   },
   {
     id: 'module-8',
     courseId: 'python-adventures',
     title: 'Building Projects',
     description: 'Put it all together and create awesome programs!',
-    lessonsCount: 1,
-    completed: false,
-    locked: false,
-    progress: 0
+    lessonsCount: 1
   }
 ];
 
@@ -273,7 +243,6 @@ export const lessonsData: Lesson[] = [
     title: 'Welcome to Python!',
     type: 'interactive',
     duration: '10 min',
-    completed: true,
     content: {
       introduction: '🎉 Welcome to the exciting world of Python programming! Python is a friendly programming language that helps computers understand what you want them to do.',
       videoUrl: 'https://www.youtube.com/embed/kqtD5dpn9C8',
@@ -308,7 +277,6 @@ print("I'm learning Python!")`,
     title: 'Making the Computer Talk',
     type: 'interactive',
     duration: '12 min',
-    completed: true,
     content: {
       introduction: 'Let\'s learn how to make the computer display messages and talk to us! The print() function is your new best friend.',
       videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw',
@@ -349,7 +317,6 @@ print("🎮 Let's code! 🚀")`,
     title: 'Python as a Calculator',
     type: 'interactive',
     duration: '15 min',
-    completed: true,
     content: {
       introduction: 'Did you know Python is amazing at math? Let\'s turn Python into your personal super calculator! 🔢',
       videoUrl: 'https://www.youtube.com/embed/Os4gZUI1ZxM',
@@ -404,7 +371,6 @@ print(10 + 5 * 2 - 3)  # Result: 17`,
     title: 'Getting Input from Users',
     type: 'interactive',
     duration: '18 min',
-    completed: true,
     content: {
       introduction: 'Want to make your programs interactive? Let\'s learn how to ask questions and get answers from users! 💬',
       videoUrl: 'https://www.youtube.com/embed/I2wURDqiXdM',
@@ -441,12 +407,11 @@ print(color, "is an awesome color! 🎨")`,
   
   // MODULE 2: Variables and Data Types
   {
-    id: 'lesson-1',
+    id: 'lesson-m2-1',
     moduleId: 'module-2',
     title: 'What are Variables?',
     type: 'interactive',
     duration: '15 min',
-    completed: true,
     content: {
       introduction: 'Variables are like boxes where you can store information. Just like you put toys in a toy box, you can put numbers, words, or other data in variables!',
       videoUrl: 'https://www.youtube.com/embed/Z1Yd7upQsXY',
@@ -482,12 +447,11 @@ print(age)   # Prints: 10`,
     }
   },
   {
-    id: 'lesson-2',
+    id: 'lesson-m2-2',
     moduleId: 'module-2',
     title: 'Numbers in Python',
     type: 'interactive',
     duration: '20 min',
-    completed: true,
     content: {
       introduction: 'Python is great at math! Let\'s learn about different types of numbers and how to use them.',
       videoUrl: 'https://www.youtube.com/embed/khKv-8q7YmY',
@@ -522,12 +486,11 @@ print(cookies_per_friend)  # Prints: 3.0`,
     }
   },
   {
-    id: 'lesson-3',
+    id: 'lesson-m2-3',
     moduleId: 'module-2',
     title: 'Working with Strings',
     type: 'interactive',
     duration: '18 min',
-    completed: true,
     content: {
       introduction: 'Strings are how we work with text in Python. Let\'s learn how to create and manipulate them!',
       videoUrl: 'https://www.youtube.com/embed/lSItwlnF0eU',
@@ -563,12 +526,11 @@ print(message.title())  # Prints: Hello World`,
     }
   },
   {
-    id: 'lesson-4',
+    id: 'lesson-m2-4',
     moduleId: 'module-2',
     title: 'Boolean Values: True or False',
     type: 'interactive',
     duration: '16 min',
-    completed: false,
     content: {
       introduction: 'Sometimes in programming, we need to answer questions with "Yes" or "No". In Python, we use Boolean values: True and False! 🎯',
       videoUrl: 'https://www.youtube.com/embed/9OK32jb_TdI',
@@ -605,12 +567,11 @@ print(7 == 7)  # True (equal to)`,
     }
   },
   {
-    id: 'lesson-5',
+    id: 'lesson-m2-5',
     moduleId: 'module-2',
     title: 'Changing Variable Values',
     type: 'interactive',
     duration: '14 min',
-    completed: false,
     content: {
       introduction: 'One of the coolest things about variables is that you can change what\'s inside them! Let\'s learn how to update variables. 🔄',
       videoUrl: 'https://www.youtube.com/embed/cQT33yu9pY8',
@@ -671,7 +632,6 @@ print("After finding 3 more:", apples, "apples total! 🍎")`,
     title: 'Making Decisions with If Statements',
     type: 'interactive',
     duration: '20 min',
-    completed: false,
     content: {
       introduction: 'Time to make your programs smart! Learn how to make decisions using if statements - they\'re like giving your code superpowers to think! 🧠',
       videoUrl: 'https://www.youtube.com/embed/f4KOjWS_KZs',
@@ -749,7 +709,6 @@ else:
     title: 'Creating Your Own Functions',
     type: 'interactive',
     duration: '22 min',
-    completed: false,
     content: {
       introduction: 'Functions are like magic spells you can create and use over and over! Learn to write your own reusable code blocks. 🪄',
       videoUrl: 'https://www.youtube.com/embed/NSbOtYzIQI0',
@@ -840,7 +799,6 @@ print("Double of 10 is:", double(10))`,
     title: 'Introduction to Lists',
     type: 'interactive',
     duration: '20 min',
-    completed: false,
     content: {
       introduction: 'Lists are like super-powered variables that can hold multiple items! Learn how to organize and manage collections of data. 📝',
       videoUrl: 'https://www.youtube.com/embed/ohCDWZgNIU0',
@@ -928,7 +886,6 @@ print("After insert:", colors)`,
     title: 'Repeating with For Loops',
     type: 'interactive',
     duration: '22 min',
-    completed: false,
     content: {
       introduction: 'Stop writing the same code over and over! Learn how to use loops to repeat actions automatically. 🔄',
       videoUrl: 'https://www.youtube.com/embed/94UHCEmprCY',
@@ -1014,7 +971,6 @@ for item in items:
     title: 'Working with Dictionaries',
     type: 'interactive',
     duration: '20 min',
-    completed: false,
     content: {
       introduction: 'Dictionaries are like real dictionaries - they store pairs of keys and values! Learn to organize data with labels. 📖',
       videoUrl: 'https://www.youtube.com/embed/XCcpzWs773o',
@@ -1117,7 +1073,6 @@ print("Hobby:", hobby)`,
     title: 'Building a Number Guessing Game',
     type: 'interactive',
     duration: '25 min',
-    completed: false,
     content: {
       introduction: 'Time to build a real project! Let\'s create a fun number guessing game using everything you\'ve learned! 🎮',
       videoUrl: 'https://www.youtube.com/embed/8ext9G7xspg',
@@ -1647,8 +1602,11 @@ export const getQuizByModuleId = (moduleId: string): Promise<Quiz | undefined> =
 // Get count of completed lessons across all modules
 export const getCompletedLessonsCount = (): Promise<number> => {
   return new Promise((resolve) => {
-    const completedCount = lessonsData.filter(lesson => lesson.completed).length;
-    setTimeout(() => resolve(completedCount), 100);
+    // Import progress manager
+    import('../utils/progressManager').then(({ getTotalCompletedLessons }) => {
+      const count = getTotalCompletedLessons();
+      setTimeout(() => resolve(count), 100);
+    });
   });
 };
 

@@ -6,6 +6,7 @@ import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newQuizzesData } from '../api/challenges-quizzes-data-fixed';
+import { markQuizCompleted, isQuizCompleted, getQuizScore } from '../utils/progressManager';
 
 interface QuizPageProps {
   moduleId: string;
@@ -111,6 +112,9 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onN
       setSelectedAnswer(null);
       setShowFeedback(false);
     } else {
+      // Quiz is complete - calculate and save the score
+      const finalScore = Math.round((score / totalQuestions) * 100);
+      markQuizCompleted(currentQuiz.id, finalScore);
       setQuizComplete(true);
     }
   };

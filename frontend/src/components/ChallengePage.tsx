@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newChallengesData } from '../api/challenges-quizzes-data-fixed';
 import { CodeEditor } from './CodeEditor';
+import { markChallengeCompleted, isChallengeCompleted } from '../utils/progressManager';
 
 interface ChallengePageProps {
   moduleId: string;
@@ -82,6 +83,12 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     const timeBonus = Math.floor(timeLeft / 10);
     const completionBonus = 100;
     setScore(timeBonus + completionBonus);
+    
+    // Mark challenge as completed with the correct challenge ID
+    if (currentChallenge) {
+      markChallengeCompleted(currentChallenge.id);
+      console.log(`✅ Challenge completed: ${currentChallenge.id}`);
+    }
   };
 
   const handleCopyCode = () => {
