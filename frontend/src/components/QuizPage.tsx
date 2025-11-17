@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Brain, CheckCircle, X, Lightbulb, Star, Award, Timer, Target } from 'lucide-react';
+import { ArrowLeft, Search, Brain, CheckCircle, X, Lightbulb, Star, Award, Timer, Target, BookOpen, AlertCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newQuizzesData } from '../api/challenges-quizzes-data-fixed';
+import { quizAPI, handleAPIError } from '../api/apiService';
 
 interface QuizPageProps {
   moduleId: string;
@@ -22,6 +23,7 @@ interface QuizQuestion {
   correctAnswer: string | number;
   explanation: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
+  hint?: string;
 }
 
 export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: QuizPageProps) {
@@ -37,7 +39,8 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
     options: q.options,
     correctAnswer: q.correctAnswer,
     explanation: q.explanation,
-    difficulty: 'Easy' as const
+    difficulty: 'Easy' as const,
+    hint: (q as any).hint || `💡 Think about what you learned in the lessons. Review the concepts related to: ${q.question.split('?')[0]}.`
   })) || [];
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -47,6 +50,10 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
   const [quizComplete, setQuizComplete] = useState(false);
   const [timeLeft, setTimeLeft] = useState(180); // 3 minutes for quiz
   const [streak, setStreak] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
 
   const totalQuestions = quizQuestions.length;
   const progressPercentage = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
@@ -92,7 +99,11 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
     if (selectedAnswer === null) return;
     
     setShowFeedback(true);
+    setShowHint(false); // Hide hint when answer is submitted
     const isCorrect = selectedAnswer === quizQuestions[currentQuestion].correctAnswer;
+    
+    // Store user's answer
+    setUserAnswers({ ...userAnswers, [currentQuestion]: selectedAnswer });
     
     if (isCorrect) {
       setScore(score + 1);
@@ -109,8 +120,55 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
       setShowFeedback(false);
+      setShowHint(false);
     } else {
-      setQuizComplete(true);
+      handleQuizComplete();
+    }
+  };
+
+  const handleQuizComplete = async () => {
+    setQuizComplete(true);
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Prepare answers in the format expected by backend
+      // Backend expects question_id as key and answer text as value
+      const answers: Record<string, string> = {};
+      Object.keys(userAnswers).forEach((questionIndex) => {
+        const qIndex = parseInt(questionIndex);
+        const question = quizQuestions[qIndex];
+        const selectedOption = question.options?.[userAnswers[qIndex]];
+        if (selectedOption) {
+          // Use the original question ID from the quiz data
+          const originalQuestion = currentQuiz?.questions[qIndex];
+          const questionId = originalQuestion?.id || question.id.toString();
+          answers[questionId] = selectedOption;
+        }
+      });
+
+      // Calculate completion time
+      const completionTime = (180 - timeLeft).toString();
+
+      // Submit to backend
+      // Map quiz ID from string format (e.g., 'quiz-m1-1') to numeric ID
+      // For now, use module number as quiz_id (backend expects numeric)
+      const moduleNum = moduleId.split('-').pop();
+      const quizId = moduleNum ? parseInt(moduleNum) : 1;
+      
+      const result = await quizAPI.submitProgress({
+        quiz_id: quizId,
+        user_id: 'demo_user', // TODO: Replace with actual user ID
+        answers: answers,
+        completion_time: completionTime
+      });
+
+      console.log('Quiz progress saved:', result);
+    } catch (error) {
+      console.error('Failed to save quiz progress:', error);
+      setSubmitError(handleAPIError(error as Error).error || 'Failed to save quiz progress');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,6 +181,9 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
     setQuizComplete(false);
     setTimeLeft(180);
     setStreak(0);
+    setShowHint(false);
+    setUserAnswers({});
+    setSubmitError(null);
   };
 
   const getScoreColor = () => {
@@ -383,6 +444,30 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
                 ))}
               </div>
 
+              {/* Hint Button - Show before submitting */}
+              {!showFeedback && selectedAnswer !== null && (
+                <div className="mb-4">
+                  <Button
+                    onClick={() => setShowHint(!showHint)}
+                    variant="outline"
+                    className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+                  >
+                    <Lightbulb className="w-4 h-4 mr-2" />
+                    {showHint ? 'Hide Hint' : 'Need a Hint? 💡'}
+                  </Button>
+                  {showHint && (
+                    <div className="mt-2 bg-orange-50 border border-orange-200 rounded-xl p-4">
+                      <div className="flex items-start space-x-2">
+                        <Lightbulb className="w-5 h-5 text-orange-600 mt-0.5" />
+                        <p className="text-orange-800 text-sm leading-relaxed">
+                          {quizQuestions[currentQuestion].hint}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Feedback Section */}
               {showFeedback && (
                 <div className={`rounded-2xl p-6 mb-6 ${
@@ -407,9 +492,21 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
                       }
                     </span>
                   </div>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 leading-relaxed mb-3">
                     {quizQuestions[currentQuestion].explanation}
                   </p>
+                  {/* Show hint if answer was wrong */}
+                  {selectedAnswer !== quizQuestions[currentQuestion].correctAnswer && quizQuestions[currentQuestion].hint && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mt-3">
+                      <div className="flex items-start space-x-2">
+                        <Lightbulb className="w-5 h-5 text-orange-600 mt-0.5" />
+                        <div>
+                          <p className="text-orange-800 text-sm font-semibold mb-1">💡 Hint for next time:</p>
+                          <p className="text-orange-700 text-sm">{quizQuestions[currentQuestion].hint}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -511,9 +608,51 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick }: Q
               
               <h2 className="text-3xl font-bold text-gray-800 mb-4">Quiz Complete!</h2>
               
+              {isSubmitting && (
+                <div className="mb-4 text-blue-600">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span>Saving your progress...</span>
+                  </div>
+                </div>
+              )}
+
+              {submitError && (
+                <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="flex items-center space-x-2 text-red-700">
+                    <AlertCircle className="w-5 h-5" />
+                    <span className="text-sm">{submitError}</span>
+                  </div>
+                </div>
+              )}
+              
               <p className="text-xl text-gray-700 mb-8">
                 {getScoreMessage()}
               </p>
+
+              {/* Show review suggestion if score is low */}
+              {(score / totalQuestions) < 0.7 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
+                  <div className="flex items-start space-x-3">
+                    <BookOpen className="w-6 h-6 text-yellow-600 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-yellow-800 mb-2">📚 Review Suggestion</h3>
+                      <p className="text-yellow-700 text-sm leading-relaxed mb-3">
+                        You're making progress! Consider reviewing the lessons in this module to strengthen your understanding. 
+                        Practice makes perfect! 💪
+                      </p>
+                      <Button
+                        onClick={onLearnClick}
+                        variant="outline"
+                        className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+                      >
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Review Lessons
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="grid grid-cols-3 gap-6 mb-8">
                 <div className="bg-purple-50 rounded-2xl p-6">
