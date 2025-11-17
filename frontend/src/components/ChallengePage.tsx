@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Search, Zap, Play, CheckCircle, Copy, RotateCcw, Maximize2, Timer, Trophy, Target, Flame, Lightbulb } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -6,6 +6,9 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { newChallengesData } from '../api/challenges-quizzes-data-fixed';
 import { challengeAPI, handleAPIError } from '../api/apiService';
 import { SolutionDisplay } from './SolutionDisplay';
+import { MonacoEditor } from './MonacoEditor';
+import { markChallengeCompleted } from '../utils/progressManager';
+import { awardBadge } from '../utils/badgeManager';
 
 interface ChallengePageProps {
   moduleId: string;
@@ -33,7 +36,8 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
   const [testResults, setTestResults] = useState<any[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [challengeCompleted, setChallengeCompleted] = useState(false);
+  const [badgeAwarded, setBadgeAwarded] = useState(false);
 
   // Update code when moduleId changes
   useEffect(() => {
@@ -66,7 +70,7 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     );
   }
 
-  const lineCount = code.split('\n').length;
+  const lineCount = code.split('\n').length; // Keep for display purposes
 
   // Timer countdown
   useEffect(() => {
@@ -107,8 +111,38 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
       setBackendScore(validationResult.score);
       setTestResults(validationResult.test_results);
       
-      // Show solution if score is low
-      if (validationResult.score < 80) {
+      // If score is 80% or higher, mark challenge as completed and award badge
+      if (validationResult.score >= 80) {
+        setChallengeCompleted(true);
+        
+        // Mark challenge as completed in progress manager
+        if (currentChallenge) {
+          markChallengeCompleted(currentChallenge.id);
+          
+          // Award badge for completing a challenge (per challenge)
+          if (!badgeAwarded) {
+            try {
+              // Award "Challenge Completer" badge for first challenge completion
+              const badgeResult = awardBadge('challenge-completer');
+              if (badgeResult.success) {
+                setBadgeAwarded(true);
+                // Show badge notification (you can add a toast/notification here)
+                console.log('Badge awarded:', badgeResult.badge);
+              }
+            } catch (error) {
+              console.error('Error awarding badge:', error);
+            }
+          }
+          
+          // Auto-navigate to quiz after 3 seconds
+          setTimeout(() => {
+            if (onQuizClick) {
+              onQuizClick();
+            }
+          }, 3000);
+        }
+      } else {
+        // Show solution if score is low
         setTimeout(() => {
           setShowSolution(true);
         }, 2000);
@@ -289,9 +323,27 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             
             <div className="mb-6">
               <h4 className="font-semibold text-gray-800 mb-2">{currentChallenge?.title || 'Challenge'}</h4>
-              <p className="text-gray-700 leading-relaxed text-sm">
+              <p className="text-gray-700 leading-relaxed text-sm mb-4">
                 {currentChallenge?.description || 'Loading challenge description...'}
               </p>
+              
+              {/* Show Expected Output Example */}
+              {currentChallenge?.testCases && currentChallenge.testCases.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                  <div className="flex items-start space-x-2">
+                    <Lightbulb className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-blue-800 mb-2 text-sm">💡 Expected Output Format:</h5>
+                      <div className="bg-gray-900 rounded-lg p-3 font-mono text-xs text-green-400 whitespace-pre-wrap overflow-x-auto">
+                        {currentChallenge.testCases[0].expectedOutput.replace(/\\n/g, '\n')}
+                      </div>
+                      <p className="text-blue-700 text-xs mt-2">
+                        Your output should match this format, but the exact wording can vary slightly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Challenge Points */}
@@ -399,57 +451,22 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
               </div>
             </div>
             
-            {/* Code Editor with Line Numbers */}
-            <div className={`bg-gray-900 rounded-b-2xl relative ${isFullscreen ? 'min-h-[600px]' : 'min-h-[450px]'}`}>
-              <div className="flex">
-                {/* Line Numbers */}
-                <div className="bg-gray-800 px-4 py-6 border-r border-gray-700 min-w-[60px]">
-                  <pre
-                    className="text-gray-500 text-sm font-mono leading-6 text-right select-none"
-                    style={{ 
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                      lineHeight: '1.6'
-                    }}
-                  >
-                    {generateLineNumbers()}
-                  </pre>
-                </div>
-                
-                {/* Code Area */}
-                <div className="flex-1 relative">
-                  <textarea
-                    ref={textareaRef}
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className={`w-full bg-transparent text-green-400 font-mono resize-none outline-none p-6 ${
-                      isFullscreen ? 'min-h-[600px]' : 'min-h-[450px]'
-                    }`}
-                    placeholder="# Write your challenge solution here..."
-                    style={{ 
-                      fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                      lineHeight: '1.6',
-                      fontSize: '16px'
-                    }}
-                    spellCheck={false}
-                  />
-                  
-                  {/* Status Indicator */}
-                  <div className="absolute top-4 right-4">
-                    <div className="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded-full">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                      <span className="text-gray-400 text-xs">Challenge Active</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Code Editor with Monaco */}
+            <div className={`bg-gray-900 rounded-b-2xl relative overflow-hidden ${isFullscreen ? 'min-h-[600px]' : 'min-h-[450px]'}`}>
+              <MonacoEditor
+                value={code}
+                onChange={(value) => setCode(value || '')}
+                language="python"
+                theme="vs-dark"
+                height={isFullscreen ? '600px' : '450px'}
+                autosaveKey={`challenge-${moduleId}-code`}
+              />
               
-              {/* Syntax Highlighting Hints */}
-              <div className="absolute bottom-4 left-4 text-gray-500 text-xs">
-                <div className="flex items-center space-x-4">
-                  <span><span className="text-purple-400">■</span> Keywords</span>
-                  <span><span className="text-green-400">■</span> Strings</span>
-                  <span><span className="text-blue-400">■</span> Numbers</span>
-                  <span><span className="text-gray-400">■</span> Comments</span>
+              {/* Status Indicator */}
+              <div className="absolute top-4 right-4 z-10">
+                <div className="flex items-center space-x-2 bg-gray-800 px-3 py-1 rounded-full">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                  <span className="text-gray-400 text-xs">Challenge Active</span>
                 </div>
               </div>
             </div>
@@ -542,7 +559,27 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             </div>
 
             {hasRun && (
-              <div className="bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-200 rounded-2xl p-6 text-center">
+              <div className={`rounded-2xl p-6 text-center ${
+                challengeCompleted 
+                  ? 'bg-gradient-to-r from-green-100 to-emerald-200 border-2 border-green-300' 
+                  : 'bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-200'
+              }`}>
+                {challengeCompleted && (
+                  <div className="mb-4">
+                    <div className="text-4xl mb-2">🏆</div>
+                    <div className="text-green-700 font-bold text-xl mb-2">Challenge Completed!</div>
+                    {badgeAwarded && (
+                      <div className="bg-yellow-100 border-2 border-yellow-400 rounded-xl p-4 mb-4 animate-pulse">
+                        <div className="text-2xl mb-1">🎖️</div>
+                        <div className="text-yellow-800 font-semibold">Badge Earned: Challenge Completer!</div>
+                        <div className="text-yellow-700 text-sm mt-1">You've completed a coding challenge! ⭐</div>
+                      </div>
+                    )}
+                    <div className="text-green-600 text-sm mb-3">
+                      Redirecting to Quiz in 3 seconds...
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-center space-x-2 text-blue-700 mb-3">
                   <Trophy className="w-6 h-6" />
                   <span className="font-semibold text-lg">Challenge Complete! 🏆</span>
@@ -557,35 +594,36 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                     </div>
                   )}
                 </div>
-                <div className="flex space-x-3">
-                  <Button 
-                    onClick={() => {
-                      // Reset challenge state
-                      setHasRun(false);
-                      setScore(0);
-                      setBackendScore(0);
-                      setTestResults([]);
-                      setValidationError(null);
-                      setIsValidating(false);
-                      setShowSolution(false);
-                      // Reset code to starter code
-                      if (currentChallenge) {
-                        setCode(currentChallenge.starterCode);
-                      }
-                      // Reset timer
-                      setTimeLeft(currentChallenge?.timeLimit || 900);
-                    }}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm"
-                  >
-                    Try Again
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm">
-                    Next Challenge →
-                  </Button>
-                  <Button variant="outline" className="px-4 py-2 rounded-xl text-sm">
-                    Leaderboard
-                  </Button>
-                </div>
+                {!challengeCompleted && (
+                  <div className="flex space-x-3">
+                    <Button 
+                      onClick={() => {
+                        // Reset challenge state
+                        setHasRun(false);
+                        setScore(0);
+                        setBackendScore(0);
+                        setTestResults([]);
+                        setValidationError(null);
+                        setIsValidating(false);
+                        setShowSolution(false);
+                        setChallengeCompleted(false);
+                        setBadgeAwarded(false);
+                        // Reset code to starter code
+                        if (currentChallenge) {
+                          setCode(currentChallenge.starterCode);
+                        }
+                        // Reset timer
+                        setTimeLeft(currentChallenge?.timeLimit || 900);
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm"
+                    >
+                      Try Again
+                    </Button>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm">
+                      Next Challenge →
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

@@ -72,6 +72,14 @@ export const BADGE_DEFINITIONS: Record<string, BadgeDefinition> = {
     color: 'from-purple-400 to-indigo-500',
     category: 'challenge',
   },
+  'challenge-completer': {
+    id: 'challenge-completer',
+    name: 'Challenge Completer',
+    description: 'Completed your first coding challenge',
+    icon: '⭐',
+    color: 'from-orange-400 to-red-500',
+    category: 'challenge',
+  },
   'module-master': {
     id: 'module-master',
     name: 'Module Master',

@@ -6,6 +6,7 @@ import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import exampleImage from 'figma:asset/92f61c2fba9265b29974c4ad1a13c4c9ada6cd46.png';
 import { getLessonsByModuleId, getModuleById, Lesson, Module } from '../api/data';
+import { isLessonCompleted, markLessonCompleted } from '../utils/progressManager';
 
 interface ModuleDetailPageProps {
   moduleId: string;
@@ -55,6 +56,33 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
     setRunningCode({});
     setEditedCode({});
   }, [currentLessonIndex]);
+
+  // Check if all lessons are completed and auto-navigate to challenge
+  // Only navigate once when lessons are first completed, not on every render
+  const [hasNavigatedToChallenge, setHasNavigatedToChallenge] = useState(false);
+  
+  useEffect(() => {
+    if (lessons.length > 0 && !isLoading && !hasNavigatedToChallenge) {
+      const allLessonsCompleted = lessons.every(lesson => isLessonCompleted(lesson.id));
+      
+      // If all lessons are completed and challenge button exists, auto-navigate
+      // This means user finished all lessons, so take them to challenge
+      if (allLessonsCompleted && onChallengeClick && lessons.length > 0) {
+        setHasNavigatedToChallenge(true);
+        // Small delay to show completion state, then navigate
+        const timer = setTimeout(() => {
+          onChallengeClick();
+        }, 2000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [lessons, isLoading, onChallengeClick, hasNavigatedToChallenge]);
+  
+  // Reset navigation flag when module changes
+  useEffect(() => {
+    setHasNavigatedToChallenge(false);
+  }, [moduleId]);
 
   const runPythonCode = async (code: string, exampleIndex: number) => {
     setRunningCode({ ...runningCode, [exampleIndex]: true });

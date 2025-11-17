@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 import json
 import os
+import re
 from datetime import datetime
 
 # Create a Blueprint which will hold all our application's routes
@@ -343,7 +344,54 @@ def validate_challenge_submission(challenge_id):
             expected_normalized = expected_output.strip().replace('\r\n', '\n').replace('\r', '\n')
             actual_normalized = actual_output.strip().replace('\r\n', '\n').replace('\r', '\n')
             
+            # Try exact match first
             is_passed = expected_normalized == actual_normalized
+            
+            # If exact match fails, try flexible validation for educational challenges
+            # Check if key information is present (for challenges where format can vary)
+            if not is_passed:
+                # Extract key words/phrases from expected output
+                expected_lower = expected_normalized.lower()
+                actual_lower = actual_normalized.lower()
+                
+                # For introduction challenges, check for key elements
+                if 'name' in expected_lower or 'age' in expected_lower or 'hobby' in expected_lower:
+                    # Check if user output contains the key information
+                    has_name = 'name' in actual_lower or any(word in actual_lower for word in ['alex', 'name'])
+                    has_age = 'age' in actual_lower or '10' in actual_lower or 'years old' in actual_lower
+                    has_hobby = 'hobby' in actual_lower or 'soccer' in actual_lower or 'play' in actual_lower
+                    
+                    # If all key elements are present, consider it passed (flexible for learning)
+                    if has_name and has_age and has_hobby:
+                        is_passed = True
+                
+                # For math challenges, check if numbers match
+                elif any(op in expected_lower for op in ['sum', 'difference', 'product', 'larger']):
+                    # Extract numbers from both outputs
+                    expected_nums = set(re.findall(r'\d+', expected_normalized))
+                    actual_nums = set(re.findall(r'\d+', actual_normalized))
+                    
+                    # If key numbers match (like sum, product results), consider passed
+                    if expected_nums and actual_nums and len(expected_nums.intersection(actual_nums)) >= 2:
+                        is_passed = True
+                
+                # General flexible check: if output contains most key words from expected
+                else:
+                    # Split into words and check overlap
+                    expected_words = set(re.findall(r'\b\w+\b', expected_normalized.lower()))
+                    actual_words = set(re.findall(r'\b\w+\b', actual_normalized.lower()))
+                    
+                    # Remove common words
+                    common_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'and', 'or', 'but', 'in', 'on', 'at', 'for', 'with', 'by'}
+                    expected_words = expected_words - common_words
+                    actual_words = actual_words - common_words
+                    
+                    # If 70% of key words match, consider it passed (flexible for learning)
+                    if expected_words and actual_words:
+                        overlap = len(expected_words.intersection(actual_words))
+                        similarity = overlap / len(expected_words) if expected_words else 0
+                        if similarity >= 0.7:
+                            is_passed = True
             
             if is_passed:
                 passed_tests += 1
