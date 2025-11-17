@@ -96,16 +96,110 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     setValidationError(null);
     
     try {
-      // For now, we'll simulate execution results
-      // In a real implementation, this would come from Miguel's Python execution
-      const executionResults = {
-        test_0: "Hi! My name is Alex\nI am 10 years old\nI love to play soccer !\nNice to meet you!"
-      };
+      // Simulate execution results based on user's code
+      // This is a simplified simulation - in production, this would use Pyodide or a backend Python executor
+      let executionResults: Record<string, string> = {};
+      
+      // For each test case, we need to simulate what the user's code would output
+      // Since we can't actually execute Python in the browser easily, we'll send the code
+      // and let the backend handle execution, OR we simulate based on code analysis
+      
+      // For now, we'll extract what the code would likely output by analyzing print statements
+      // This is a fallback - ideally the backend should execute the code
+      if (currentChallenge?.testCases) {
+        currentChallenge.testCases.forEach((testCase, index) => {
+          // Try to extract output from code by finding print statements
+          // This is a simple heuristic - real execution would be better
+          const printMatches = code.match(/print\s*\([^)]+\)/g);
+          if (printMatches) {
+            // Simulate output by replacing variables with test input values
+            // For Challenge 1: input is "Alex, 10, play soccer"
+            const inputs = testCase.input.split(',').map(s => s.trim());
+            let simulatedOutput = '';
+            
+            printMatches.forEach((printStmt) => {
+              // Extract content inside print()
+              const contentMatch = printStmt.match(/print\s*\((.*)\)/);
+              if (contentMatch) {
+                let content = contentMatch[1];
+                let outputLine = '';
+                
+                // Parse print() arguments - split by comma, but respect string literals
+                // Simple approach: split by comma and process each argument
+                const args = [];
+                let currentArg = '';
+                let inString = false;
+                let stringChar = '';
+                
+                for (let i = 0; i < content.length; i++) {
+                  const char = content[i];
+                  
+                  if ((char === '"' || char === "'") && (i === 0 || content[i-1] !== '\\')) {
+                    if (!inString) {
+                      inString = true;
+                      stringChar = char;
+                      currentArg += char;
+                    } else if (char === stringChar) {
+                      inString = false;
+                      currentArg += char;
+                    } else {
+                      currentArg += char;
+                    }
+                  } else if (char === ',' && !inString) {
+                    args.push(currentArg.trim());
+                    currentArg = '';
+                  } else {
+                    currentArg += char;
+                  }
+                }
+                if (currentArg.trim()) {
+                  args.push(currentArg.trim());
+                }
+                
+                // Process each argument
+                const outputParts = [];
+                for (const arg of args) {
+                  // Check if it's a string literal
+                  const stringMatch = arg.match(/^["'](.+)["']$/);
+                  if (stringMatch) {
+                    // It's a string literal - output as-is
+                    outputParts.push(stringMatch[1]);
+                  } else {
+                    // It's a variable - replace with test input
+                    let varValue = arg.trim();
+                    if (inputs.length >= 3) {
+                      if (varValue === 'name') varValue = inputs[0];
+                      else if (varValue === 'age') varValue = inputs[1];
+                      else if (varValue === 'hobby') varValue = inputs[2];
+                    } else if (inputs.length >= 2) {
+                      if (varValue === 'num1') varValue = inputs[0];
+                      else if (varValue === 'num2') varValue = inputs[1];
+                    } else if (inputs.length >= 1) {
+                      if (varValue === 'score') varValue = inputs[0];
+                      else if (varValue === 'weather') varValue = inputs[0];
+                    }
+                    outputParts.push(varValue);
+                  }
+                }
+                
+                // Join parts with space (Python print() behavior)
+                simulatedOutput += outputParts.join(' ') + '\n';
+              }
+            });
+            
+            executionResults[`test_${index}`] = simulatedOutput.trim();
+          } else {
+            // If no print statements found, output is empty
+            executionResults[`test_${index}`] = '';
+          }
+        });
+      }
       
       // Get challenge ID (convert moduleId to challenge ID)
       const challengeId = parseInt(moduleId.replace('module-', ''));
       
-      // Validate with backend
+      // Validate with backend - backend should ideally execute the code itself
+      // For now, we send both code and simulated results
       const validationResult = await challengeAPI.validateSubmission(challengeId, {
         user_id: 'demo_user',
         code: code,
@@ -516,14 +610,26 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                   Save Progress
                 </Button>
                 <Button 
-                  onClick={handleRunCode}
-                  disabled={hasRun || isValidating}
+                  onClick={() => {
+                    if (hasRun && !challengeCompleted) {
+                      // Reset state to allow retry
+                      setHasRun(false);
+                      setTestResults([]);
+                      setBackendScore(0);
+                      setValidationError(null);
+                      setShowSolution(false);
+                    } else {
+                      handleRunCode();
+                    }
+                  }}
+                  disabled={isValidating}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl flex items-center space-x-2 shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Play className="w-5 h-5" />
                   <span>
                     {isValidating ? 'Validating...' : 
-                     hasRun ? 'Submitted!' : 
+                     hasRun && !challengeCompleted ? 'Try Again' : 
+                     hasRun && challengeCompleted ? 'Submitted!' :
                      'Submit Challenge'}
                   </span>
                 </Button>
@@ -592,8 +698,20 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                               </div>
                             )}
                             {!result.passed && (
-                              <div className="text-yellow-400 text-xs mt-2 italic">
-                                💡 Tip: Check the format and make sure all required information is included
+                              <div className="text-yellow-400 text-xs mt-2">
+                                {result.missing_parts && result.missing_parts.length > 0 ? (
+                                  <div>
+                                    <div className="font-semibold mb-1">💡 Missing:</div>
+                                    <div className="italic">
+                                      Your output is missing: {result.missing_parts.join(', ')}. 
+                                      Make sure to include all required information (name, age, and hobby)!
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="italic">
+                                    💡 Tip: Check the format and make sure all required information is included
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

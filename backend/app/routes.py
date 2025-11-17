@@ -357,13 +357,32 @@ def validate_challenge_submission(challenge_id):
                 # For introduction challenges, check for key elements
                 if 'name' in expected_lower or 'age' in expected_lower or 'hobby' in expected_lower:
                     # Check if user output contains the key information
-                    has_name = 'name' in actual_lower or any(word in actual_lower for word in ['alex', 'name'])
-                    has_age = 'age' in actual_lower or '10' in actual_lower or 'years old' in actual_lower
-                    has_hobby = 'hobby' in actual_lower or 'soccer' in actual_lower or 'play' in actual_lower
+                    # Must have ALL three elements to pass (stricter validation)
+                    has_name = 'name' in actual_lower
+                    has_age = 'age' in actual_lower or 'years old' in actual_lower or any(str(i) in actual_lower for i in range(1, 100))
+                    has_hobby = 'hobby' in actual_lower or 'love' in actual_lower or 'favorite' in actual_lower
                     
-                    # If all key elements are present, consider it passed (flexible for learning)
-                    if has_name and has_age and has_hobby:
+                    # Also check that the output contains actual values (not just keywords)
+                    # For Challenge 1, we expect to see the test input values
+                    has_actual_values = len(actual_normalized) > 20  # Output should be substantial
+                    
+                    # If all key elements are present AND output is substantial, consider it passed
+                    if has_name and has_age and has_hobby and has_actual_values:
                         is_passed = True
+                    else:
+                        # Add helpful feedback about what's missing
+                        missing_parts = []
+                        if not has_name:
+                            missing_parts.append('name')
+                        if not has_age:
+                            missing_parts.append('age')
+                        if not has_hobby:
+                            missing_parts.append('hobby')
+                        if not has_actual_values:
+                            missing_parts.append('complete output')
+                        
+                        # Store feedback in test result for frontend display
+                        test_case['missing_parts'] = missing_parts
                 
                 # For math challenges, check if numbers match
                 elif any(op in expected_lower for op in ['sum', 'difference', 'product', 'larger']):
@@ -376,33 +395,44 @@ def validate_challenge_submission(challenge_id):
                         is_passed = True
                 
                 # General flexible check: if output contains most key words from expected
+                # This is a fallback for other challenge types - should be stricter
                 else:
-                    # Split into words and check overlap
-                    expected_words = set(re.findall(r'\b\w+\b', expected_normalized.lower()))
-                    actual_words = set(re.findall(r'\b\w+\b', actual_normalized.lower()))
-                    
-                    # Remove common words
-                    common_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'and', 'or', 'but', 'in', 'on', 'at', 'for', 'with', 'by'}
-                    expected_words = expected_words - common_words
-                    actual_words = actual_words - common_words
-                    
-                    # If 70% of key words match, consider it passed (flexible for learning)
-                    if expected_words and actual_words:
-                        overlap = len(expected_words.intersection(actual_words))
-                        similarity = overlap / len(expected_words) if expected_words else 0
-                        if similarity >= 0.7:
-                            is_passed = True
+                    # Only apply flexible validation if output is substantial
+                    if len(actual_normalized) < 10:
+                        is_passed = False  # Too short, definitely wrong
+                    else:
+                        # Split into words and check overlap
+                        expected_words = set(re.findall(r'\b\w+\b', expected_normalized.lower()))
+                        actual_words = set(re.findall(r'\b\w+\b', actual_normalized.lower()))
+                        
+                        # Remove common words
+                        common_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'and', 'or', 'but', 'in', 'on', 'at', 'for', 'with', 'by', 'my', 'i', 'am'}
+                        expected_words = expected_words - common_words
+                        actual_words = actual_words - common_words
+                        
+                        # Require 80% similarity AND minimum word count (stricter)
+                        if expected_words and actual_words and len(actual_words) >= 3:
+                            overlap = len(expected_words.intersection(actual_words))
+                            similarity = overlap / len(expected_words) if expected_words else 0
+                            if similarity >= 0.8:  # Increased from 0.7 to 0.8
+                                is_passed = True
             
             if is_passed:
                 passed_tests += 1
             
-            test_results.append({
+            test_result = {
                 'test_case': i + 1,
                 'input': test_case.get('input', ''),
                 'expected_output': expected_output,
                 'actual_output': actual_output,
                 'passed': is_passed
-            })
+            }
+            
+            # Add helpful feedback for failed tests
+            if not is_passed and 'missing_parts' in test_case:
+                test_result['missing_parts'] = test_case.get('missing_parts', [])
+            
+            test_results.append(test_result)
         
         # Calculate score
         score = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
