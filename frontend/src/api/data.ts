@@ -64,6 +64,11 @@ export interface TestCase {
   expectedOutput: string;
 }
 
+export interface ChallengeHint {
+  level: number;
+  text: string;
+}
+
 export interface Challenge {
   id: string;
   moduleId: string;
@@ -74,6 +79,7 @@ export interface Challenge {
   points: number;
   starterCode: string;
   solution: string;
+  hints?: ChallengeHint[]; // Progressive hints
   testCases: TestCase[];
 }
 

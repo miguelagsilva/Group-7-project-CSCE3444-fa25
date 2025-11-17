@@ -31,6 +31,7 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
     currentChallenge?.difficulty === 'hard' ? 'Hard' : 'Medium'
   );
   const [showHints, setShowHints] = useState(false);
+  const [hintLevel, setHintLevel] = useState(0); // Progressive hint level (0 = no hints shown, 1-3 = hint levels)
   const [showSolution, setShowSolution] = useState(false);
   const [backendScore, setBackendScore] = useState(0);
   const [testResults, setTestResults] = useState<any[]>([]);
@@ -51,6 +52,9 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
       setHasRun(false);
       setScore(0);
       setShowHints(false);
+      setHintLevel(0);
+      setTestResults([]);
+      setValidationError(null);
     }
   }, [moduleId, currentChallenge]);
 
@@ -365,41 +369,64 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
               </ul>
             </div>
 
-            {/* Hints Section */}
+            {/* Progressive Hints Section */}
             <div className="mb-6">
-              <Button
-                onClick={() => setShowHints(!showHints)}
-                variant="outline"
-                className="w-full rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium py-3"
-              >
-                <Lightbulb className="w-5 h-5 mr-2" />
-                {showHints ? 'Hide Hints' : 'Need a Hint?'}
-              </Button>
+              <div className="flex items-center space-x-2 mb-2">
+                <Button
+                  onClick={() => {
+                    if (hintLevel === 0) {
+                      setHintLevel(1);
+                      setShowHints(true);
+                    } else if (hintLevel < (currentChallenge?.hints?.length || 0)) {
+                      setHintLevel(hintLevel + 1);
+                    }
+                  }}
+                  variant="outline"
+                  disabled={hintLevel >= (currentChallenge?.hints?.length || 0)}
+                  className="flex-1 rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium py-3"
+                >
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  {hintLevel === 0 ? 'Need a Hint?' : `Show Hint ${hintLevel + 1}${hintLevel >= (currentChallenge?.hints?.length || 0) ? ' (All hints shown)' : ''}`}
+                </Button>
+                {hintLevel > 0 && (
+                  <Button
+                    onClick={() => {
+                      setShowHints(!showHints);
+                    }}
+                    variant="outline"
+                    className="rounded-xl border-yellow-300 text-yellow-700 hover:bg-yellow-50 px-3"
+                  >
+                    {showHints ? 'Hide' : 'Show'}
+                  </Button>
+                )}
+              </div>
               
-              {showHints && (
+              {showHints && hintLevel > 0 && (
                 <div className="mt-4 bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4 animate-in fade-in duration-300">
-                  <h5 className="font-semibold text-yellow-800 mb-3 flex items-center">
-                    <Lightbulb className="w-4 h-4 mr-2" />
-                    Helpful Hints:
-                  </h5>
-                  <ul className="space-y-3 text-sm text-yellow-900">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Read the challenge description carefully and understand what's expected</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Start by writing out the steps in comments before coding</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Test your code with simple examples first</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-yellow-600 font-bold">💡</span>
-                      <span>Look at the starter code - it gives you clues about the solution structure</span>
-                    </li>
-                  </ul>
+                  <div className="flex items-center justify-between mb-3">
+                    <h5 className="font-semibold text-yellow-800 flex items-center">
+                      <Lightbulb className="w-4 h-4 mr-2" />
+                      Progressive Hints ({hintLevel}/{currentChallenge?.hints?.length || 0}):
+                    </h5>
+                    {hintLevel < (currentChallenge?.hints?.length || 0) && (
+                      <span className="text-xs text-yellow-600">Click button above for more hints</span>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    {currentChallenge?.hints?.slice(0, hintLevel).map((hint: any, index: number) => (
+                      <div key={index} className="flex items-start space-x-2 bg-white rounded-lg p-3 border border-yellow-300">
+                        <span className="text-yellow-600 font-bold text-sm">Level {hint.level}:</span>
+                        <span className="text-yellow-900 text-sm flex-1">{hint.text}</span>
+                      </div>
+                    ))}
+                    {(!currentChallenge?.hints || currentChallenge.hints.length === 0) && (
+                      <div className="text-yellow-800 text-sm">
+                        <p>💡 Read the challenge description carefully and understand what's expected</p>
+                        <p className="mt-2">💡 Start by writing out the steps in comments before coding</p>
+                        <p className="mt-2">💡 Test your code with simple examples first</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -530,29 +557,90 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                   </div>
                 ) : (
                   <div>
-                    <div className="text-blue-400"># Running challenge tests...</div>
-                    <div className="mt-2 space-y-1">
-                      {currentChallenge?.testCases && currentChallenge.testCases.length > 0 ? (
-                        <div className="text-gray-300">
-                          <div className="mb-2">Test Case Results:</div>
-                          {currentChallenge.testCases.map((testCase, index) => (
-                            <div key={index} className="mb-3">
-                              <div className="text-yellow-400">Test {index + 1}:</div>
-                              {testCase.input && <div className="text-gray-400">Input: {testCase.input}</div>}
-                              <div className="text-green-400">Expected: {testCase.expectedOutput}</div>
+                    <div className="text-blue-400 mb-3"># Running challenge tests...</div>
+                    {isValidating && (
+                      <div className="text-yellow-400 mb-3 animate-pulse">⏳ Validating with backend...</div>
+                    )}
+                    {testResults && testResults.length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="text-gray-300 font-semibold mb-2">Test Case Results:</div>
+                        {testResults.map((result: any, index: number) => (
+                          <div key={index} className={`border rounded-lg p-3 ${
+                            result.passed ? 'border-green-500 bg-green-900/20' : 'border-red-500 bg-red-900/20'
+                          }`}>
+                            <div className="flex items-center space-x-2 mb-2">
+                              {result.passed ? (
+                                <CheckCircle className="w-4 h-4 text-green-400" />
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                              <span className={`font-semibold ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
+                                Test {result.test_case} {result.passed ? 'PASSED' : 'FAILED'}
+                              </span>
                             </div>
-                          ))}
+                            {result.input && (
+                              <div className="text-gray-400 text-xs mb-1">
+                                <span className="text-gray-500">Input:</span> {result.input}
+                              </div>
+                            )}
+                            <div className="text-green-400 text-xs mb-1">
+                              <span className="text-gray-500">Expected:</span> {result.expected_output?.replace(/\\n/g, '\n') || 'N/A'}
+                            </div>
+                            {!result.passed && (
+                              <div className="text-red-400 text-xs mt-2">
+                                <span className="text-gray-500">Your Output:</span> {result.actual_output?.replace(/\\n/g, '\n') || 'No output'}
+                              </div>
+                            )}
+                            {!result.passed && (
+                              <div className="text-yellow-400 text-xs mt-2 italic">
+                                💡 Tip: Check the format and make sure all required information is included
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        <div className={`mt-4 p-3 rounded-lg ${
+                          testResults.every((r: any) => r.passed) 
+                            ? 'bg-green-900/30 border border-green-500' 
+                            : 'bg-red-900/30 border border-red-500'
+                        }`}>
+                          <div className="flex items-center space-x-2">
+                            {testResults.every((r: any) => r.passed) ? (
+                              <>
+                                <CheckCircle className="w-5 h-5 text-green-400" />
+                                <span className="text-green-400 font-semibold">All tests passed! 🎉</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-red-400 text-xl">✗</span>
+                                <span className="text-red-400 font-semibold">
+                                  {testResults.filter((r: any) => r.passed).length}/{testResults.length} tests passed
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="text-green-400">Test output will appear here...</div>
-                      )}
-                    </div>
-                    <div className="mt-4 text-gray-500">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-400" />
-                        <span>All tests passed! 🎉</span>
                       </div>
-                    </div>
+                    ) : currentChallenge?.testCases && currentChallenge.testCases.length > 0 ? (
+                      <div className="text-gray-300">
+                        <div className="mb-2">Test Case Results:</div>
+                        {currentChallenge.testCases.map((testCase, index) => (
+                          <div key={index} className="mb-3">
+                            <div className="text-yellow-400">Test {index + 1}:</div>
+                            {testCase.input && <div className="text-gray-400">Input: {testCase.input}</div>}
+                            <div className="text-green-400">Expected: {testCase.expectedOutput?.replace(/\\n/g, '\n')}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-green-400">Test output will appear here...</div>
+                    )}
+                    {validationError && (
+                      <div className="mt-3 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+                        <div className="text-red-400 text-sm">
+                          <span className="font-semibold">Error:</span> {validationError}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

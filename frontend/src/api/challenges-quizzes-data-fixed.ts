@@ -30,6 +30,11 @@ print("Hi! My name is", name)
 print("I am", age, "years old")
 print("I love to", hobby, "!")
 print("Nice to meet you! 🎉")`,
+    hints: [
+      { level: 1, text: '💡 Hint 1: You already have the input() functions to get name, age, and hobby. Now you need to use print() to display them!' },
+      { level: 2, text: '💡 Hint 2: Use print() statements to display the information. For example: print("Hi! My name is", name)' },
+      { level: 3, text: '💡 Hint 3: You need 4 print() statements: one for name, one for age, one for hobby, and one for a closing message like "Nice to meet you!"' }
+    ],
     testCases: [
       { input: 'Alex, 10, play soccer', expectedOutput: 'Hi! My name is Alex\\nI am 10 years old\\nI love to play soccer !\\nNice to meet you! 🎉' }
     ]
@@ -62,6 +67,11 @@ if num1 > num2:
     print("Larger number:", num1)
 else:
     print("Larger number:", num2)`,
+    hints: [
+      { level: 1, text: '💡 Hint 1: You need to calculate sum (addition), difference (subtraction), product (multiplication), and find the larger number.' },
+      { level: 2, text: '💡 Hint 2: Use + for sum, - for difference, * for product. Use max() function to find the larger number.' },
+      { level: 3, text: '💡 Hint 3: You need 4 print() statements: print(f"Sum: {num1 + num2}"), print(f"Difference: {num1 - num2}"), print(f"Product: {num1 * num2}"), and print(f"Larger number: {max(num1, num2)}")' }
+    ],
     testCases: [
       { input: '5, 3', expectedOutput: 'Sum: 8\\nDifference: 2\\nProduct: 15\\nLarger number: 5' }
     ]

@@ -10,6 +10,20 @@
     "starterCode": "# Ask for user information\nname = input(\"What's your name? \")\nage = input(\"How old are you? \")\nhobby = input(\"What's your favorite hobby? \")\n\n# Create and print introduction\n# YOUR CODE HERE",
     "solution": "# Ask for user information\nname = input(\"What's your name? \")\nage = input(\"How old are you? \")\nhobby = input(\"What's your favorite hobby? \")\n\n# Create and print introduction\nprint(\"Hi! My name is\", name)\nprint(\"I am\", age, \"years old\")\nprint(\"I love to\", hobby, \"!\")\nprint(\"Nice to meet you! 🎉\")",
     "explanation": "This challenge teaches basic input/output operations and string formatting. The solution uses the print() function to display user information in a friendly format.",
+    "hints": [
+      {
+        "level": 1,
+        "text": "💡 Hint 1: You already have the input() functions to get name, age, and hobby. Now you need to use print() to display them!"
+      },
+      {
+        "level": 2,
+        "text": "💡 Hint 2: Use print() statements to display the information. For example: print(\"Hi! My name is\", name)"
+      },
+      {
+        "level": 3,
+        "text": "💡 Hint 3: You need 4 print() statements: one for name, one for age, one for hobby, and one for a closing message like \"Nice to meet you!\""
+      }
+    ],
     "testCases": [
       {
         "input": "Alex, 10, play soccer",
@@ -29,6 +43,20 @@
     "starterCode": "# Get two numbers from the user\nnum1 = int(input(\"Enter first number: \"))\nnum2 = int(input(\"Enter second number: \"))\n\n# Calculate and display results\n# YOUR CODE HERE",
     "solution": "# Get two numbers from the user\nnum1 = int(input(\"Enter first number: \"))\nnum2 = int(input(\"Enter second number: \"))\n\n# Calculate and display results\nprint(f\"Sum: {num1 + num2}\")\nprint(f\"Difference: {num1 - num2}\")\nprint(f\"Product: {num1 * num2}\")\nprint(f\"Larger number: {max(num1, num2)}\")",
     "explanation": "This challenge teaches arithmetic operations and the max() function. Students learn to perform calculations and display formatted results.",
+    "hints": [
+      {
+        "level": 1,
+        "text": "💡 Hint 1: You need to calculate sum (addition), difference (subtraction), product (multiplication), and find the larger number."
+      },
+      {
+        "level": 2,
+        "text": "💡 Hint 2: Use + for sum, - for difference, * for product. Use max() function to find the larger number."
+      },
+      {
+        "level": 3,
+        "text": "💡 Hint 3: You need 4 print() statements: print(f\"Sum: {num1 + num2}\"), print(f\"Difference: {num1 - num2}\"), print(f\"Product: {num1 * num2}\"), and print(f\"Larger number: {max(num1, num2)}\")"
+      }
+    ],
     "testCases": [
       {
         "input": "5, 3",
