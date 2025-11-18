@@ -1,0 +1,15 @@
+[
+  {
+    "quiz_id": 1,
+    "user_id": "test_user",
+    "score": 100.0,
+    "correct_answers": 2,
+    "total_questions": 2,
+    "answers": {
+      "101": "print()",
+      "102": "A comment"
+    },
+    "completion_time": "2025-10-26T21:01:57.642838",
+    "timestamp": "2025-10-26T21:01:57.642838"
+  }
+]
