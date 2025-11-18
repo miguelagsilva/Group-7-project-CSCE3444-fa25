@@ -177,10 +177,10 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onN
       <div className="absolute top-32 right-20 w-12 h-12 bg-blue-300 rounded-full opacity-50 animate-bounce" style={{animationDelay: '1s'}}></div>
       <div className="absolute bottom-40 left-1/4 w-20 h-20 bg-white rounded-full opacity-60 animate-pulse" style={{animationDelay: '2s'}}></div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          {/* Left: Back Button */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 md:mb-12 gap-4">
+          {/* Back Button */}
           <div className="flex items-center">
             <Button 
               onClick={onBack}
@@ -191,15 +191,15 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onN
             </Button>
           </div>
           
-          {/* Center: LeetCode for Kids */}
-          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+          {/* Center: LeetCode for Kids - shows below on mobile, centered on desktop */}
+          <div className="flex items-center justify-center md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
+            <h1 className="text-blue-600 text-2xl md:text-3xl font-bold tracking-wide">
               LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Spacer for alignment */}
-          <div className="flex items-center space-x-4 invisible">
+          {/* Right: Spacer for alignment on desktop */}
+          <div className="hidden md:flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Brain className="w-8 h-8 text-white" />
             </div>
@@ -213,21 +213,21 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onN
             <div className="flex space-x-2">
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                className="text-gray-600 px-4 md:px-6 py-3 rounded-xl font-medium hover:bg-gray-50 text-sm md:text-base"
                 onClick={onLearnClick}
               >
                 Learn
               </Button>
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                className="text-gray-600 px-4 md:px-6 py-3 rounded-xl font-medium hover:bg-gray-50 text-sm md:text-base"
                 onClick={onChallengeClick}
               >
                 Challenge
               </Button>
               <Button 
                 variant="ghost" 
-                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 md:px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 text-sm md:text-base"
               >
                 Quiz
               </Button>
@@ -236,9 +236,9 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onN
         </div>
 
         {/* Quiz Stats Bar */}
-        <div className="bg-white rounded-2xl p-6 mb-8 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
+        <div className="bg-white rounded-2xl p-4 md:p-6 mb-8 shadow-lg">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="grid grid-cols-2 lg:flex lg:items-center gap-4 lg:space-x-8">
               <div className="flex items-center space-x-3">
                 <Timer className="w-6 h-6 text-blue-600" />
                 <div>
@@ -278,7 +278,7 @@ export function QuizPage({ moduleId, onBack, onLearnClick, onChallengeClick, onN
               </div>
             </div>
             
-            <div className="w-32">
+            <div className="w-full lg:w-32">
               <Progress value={progressPercentage} className="h-3" />
               <div className="text-center text-sm text-gray-600 mt-1">
                 {Math.round(progressPercentage)}%

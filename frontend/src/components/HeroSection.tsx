@@ -57,31 +57,33 @@ export function HeroSection({ onNavigateToModules }: HeroSectionProps) {
         </svg>
       </div>
       
-      <div className="relative z-10 px-8 my-32 max-w-7xl mx-auto">
+      <div className="relative z-10 px-4 md:px-8 my-16 md:my-32 max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left content */}
-          <div className="space-y-8">
+          <div className="space-y-8 text-center lg:text-left">
             <div className="space-y-4">
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-800 leading-tight tracking-wide">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-800 leading-tight tracking-wide">
                 Where Coding 
                 <br />
                 <span className="text-blue-600">Sparks Creativity</span>
               </h1>
-              <p className="text-xl text-gray-600 max-w-lg">
+              <p className="text-lg sm:text-xl text-gray-600 max-w-lg mx-auto lg:mx-0">
                 Helping kids grow smarter and more curious through playful, engaging coding lessons.
               </p>
             </div>
             
-            <Button 
-              onClick={onNavigateToModules}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-            >
-              Start Your Coding Adventure
-            </Button>
+            <div className="flex justify-center lg:justify-start">
+              <Button 
+                onClick={onNavigateToModules}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-10 sm:px-12 py-5 sm:py-6 text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                Start Your Coding Adventure
+              </Button>
+            </div>
           </div>
           
           {/* Right content - Floating images */}
-          <div className="relative">
+          <div className="relative hidden lg:block">
             {/* Main coding image */}
             <div className="relative z-10 transform rotate-3 hover:rotate-0 transition-transform duration-300">
               <div className="bg-white p-4 rounded-2xl shadow-xl">

@@ -476,7 +476,7 @@ export function DashboardLanding({ onStartLearning, onFreeCodeClick, onNavigateT
               <Label className="text-lg font-bold text-gray-700">
                 Pick your avatar!
               </Label>
-              <div className="grid grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 justify-items-center">
                 {avatarOptions.map((avatar) => (
                   <button
                     key={avatar.id}

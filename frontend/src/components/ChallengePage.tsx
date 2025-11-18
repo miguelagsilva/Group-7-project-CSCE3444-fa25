@@ -269,10 +269,10 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
         </div>
       )}
 
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          {/* Left: Back Button */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 md:mb-12 gap-4">
+          {/* Back Button */}
           <div className="flex items-center">
             <Button 
               onClick={onBack}
@@ -283,15 +283,15 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             </Button>
           </div>
           
-          {/* Center: LeetCode for Kids */}
-          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+          {/* Center: LeetCode for Kids - shows below on mobile, centered on desktop */}
+          <div className="flex items-center justify-center md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
+            <h1 className="text-blue-600 text-2xl md:text-3xl font-bold tracking-wide">
               LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Spacer for alignment */}
-          <div className="flex items-center space-x-4 invisible">
+          {/* Right: Spacer for alignment on desktop */}
+          <div className="hidden md:flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Zap className="w-8 h-8 text-white" />
             </div>
@@ -305,20 +305,20 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             <div className="flex space-x-2">
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                className="text-gray-600 px-4 md:px-6 py-3 rounded-xl font-medium hover:bg-gray-50 text-sm md:text-base"
                 onClick={onLearnClick}
               >
                 Learn
               </Button>
               <Button 
                 variant="ghost" 
-                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600"
+                className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 md:px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-purple-600 text-sm md:text-base"
               >
                 Challenge
               </Button>
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-medium hover:bg-gray-50"
+                className="text-gray-600 px-4 md:px-6 py-3 rounded-xl font-medium hover:bg-gray-50 text-sm md:text-base"
                 onClick={onQuizClick}
               >
                 Quiz
@@ -328,9 +328,9 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
         </div>
 
         {/* Challenge Stats Bar */}
-        <div className="bg-white rounded-2xl p-6 mb-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
+        <div className="bg-white rounded-2xl p-4 md:p-6 mb-6 shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:space-x-8">
               <div className="flex items-center space-x-3">
                 <Timer className="w-6 h-6 text-blue-600" />
                 <div>
@@ -375,11 +375,11 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
         <div className="bg-white rounded-3xl shadow-lg overflow-hidden mb-8">
           {/* Top Section: Challenge Info */}
           <div className="p-6 border-b-2 border-gray-100">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
                   <Trophy className="w-6 h-6 text-orange-600" />
-                  <h3 className="text-xl font-bold text-gray-800">{currentChallenge?.title || 'Challenge'}</h3>
+                  <h3 className="text-lg md:text-xl font-bold text-gray-800">{currentChallenge?.title || 'Challenge'}</h3>
                   <Badge className={`${
                     difficulty === 'Easy' ? 'bg-green-100 text-green-800' :
                     difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
@@ -388,11 +388,11 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
                     {difficulty}
                   </Badge>
                 </div>
-                <p className="text-gray-700 leading-relaxed mb-4">
+                <p className="text-gray-700 leading-relaxed mb-4 text-sm md:text-base">
                   {currentChallenge?.description || 'Loading challenge description...'}
                 </p>
                 
-                <div className="flex items-center space-x-6 text-sm text-gray-600">
+                <div className="flex items-center space-x-4 md:space-x-6 text-xs md:text-sm text-gray-600">
                   <div className="flex items-center space-x-2">
                     <Trophy className="w-4 h-4 text-blue-600" />
                     <span>{currentChallenge?.points || 100} pts</span>
@@ -405,14 +405,14 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
               </div>
               
               {/* Hints Button */}
-              <div>
+              <div className="w-full md:w-auto">
                 <Button
                   onClick={() => setShowHints(!showHints)}
                   variant="outline"
-                  className="rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium"
+                  className="w-full md:w-auto rounded-xl border-2 border-yellow-300 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-medium"
                 >
                   <Lightbulb className="w-5 h-5 mr-2" />
-                  {showHints ? 'Hide Hints' : 'Need a Hint?'}
+                  <span className="text-sm md:text-base">{showHints ? 'Hide Hints' : 'Need a Hint?'}</span>
                 </Button>
               </div>
             </div>
@@ -447,9 +447,9 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
           </div>
 
           {/* Middle Section: Code Editor and Output Side by Side */}
-          <div className="flex h-[900px]">
+          <div className="flex flex-col lg:flex-row h-auto lg:h-[900px]">
             {/* Code Editor */}
-            <div className="w-[60%] border-r-2 border-white flex flex-col">
+            <div className="w-full lg:w-[60%] lg:border-r-2 border-white flex flex-col h-[400px] lg:h-auto">
               {/* Editor Header */}
               <div className="bg-gray-800 h-16 px-4 flex items-center justify-between border-b border-gray-700">
                 <div className="flex items-center space-x-4">
@@ -519,7 +519,7 @@ export function ChallengePage({ moduleId, onBack, onLearnClick, onQuizClick }: C
             </div>
 
             {/* Output Panel */}
-            <div className="w-[40%] flex flex-col bg-gray-900">
+            <div className="w-full lg:w-[40%] flex flex-col bg-gray-900">
               {/* Output Header */}
               <div className="bg-gray-800 h-16 px-4 border-b border-gray-700 flex items-center justify-between">
                 <div className="flex items-center justify-between">

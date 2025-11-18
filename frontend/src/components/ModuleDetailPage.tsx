@@ -252,10 +252,10 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
       <div className="absolute top-20 left-10 w-16 h-16 bg-blue-200 rounded-full opacity-40 animate-pulse"></div>
       <div className="absolute top-32 right-20 w-12 h-12 bg-blue-300 rounded-full opacity-50 animate-bounce" style={{animationDelay: '1s'}}></div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          {/* Left: Back Button */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+          {/* Back Button */}
           <div className="flex items-center">
             <Button 
               onClick={onBack}
@@ -266,15 +266,15 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
             </Button>
           </div>
           
-          {/* Center: LeetCode for Kids */}
-          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+          {/* Center: LeetCode for Kids - shows below on mobile, centered on desktop */}
+          <div className="flex items-center justify-center md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
+            <h1 className="text-blue-600 text-2xl md:text-3xl font-bold tracking-wide">
               LeetCode for Kids
             </h1>
           </div>
           
-          {/* Right: Spacer for alignment */}
-          <div className="flex items-center space-x-4 invisible">
+          {/* Right: Spacer for alignment on desktop */}
+          <div className="hidden md:flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Code className="w-8 h-8 text-white" />
             </div>
@@ -286,19 +286,19 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-2xl py-2 px-6 shadow-lg">
             <div className="flex space-x-2">
-              <Button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-large">
+              <Button className="bg-blue-600 text-white px-4 md:px-6 py-3 rounded-xl font-large text-sm md:text-base">
                 Learn
               </Button>
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
+                className="text-gray-600 px-4 md:px-6 py-3 rounded-xl font-large hover:bg-gray-50 text-sm md:text-base"
                 onClick={onChallengeClick}
               >
                 Challenge
               </Button>
               <Button 
                 variant="ghost" 
-                className="text-gray-600 px-6 py-3 rounded-xl font-large hover:bg-gray-50"
+                className="text-gray-600 px-4 md:px-6 py-3 rounded-xl font-large hover:bg-gray-50 text-sm md:text-base"
                 onClick={onQuizClick}
               >
                 Quiz
@@ -307,19 +307,19 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Module Title with Robot */}
-            <div className="flex items-center space-x-6 mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:space-x-6 mb-8">
               <div className="bg-blue-100 p-4 rounded-3xl">
-                <span className="text-6xl">🤖</span>
+                <span className="text-4xl sm:text-6xl">🤖</span>
               </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-800 mb-2">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-2">
                   {currentModule?.title || 'Loading...'}
                 </h1>
-                <p className="text-xl text-gray-600">
+                <p className="text-base sm:text-lg lg:text-xl text-gray-600">
                   {currentModule?.description || ''}
                 </p>
               </div>
@@ -347,15 +347,15 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
             {!isLoading && currentLesson && (
               <>
                 <Card className="p-8 mb-8 rounded-3xl shadow-lg">
-                  <div className="flex items-start space-x-6">
-                    <div className="bg-orange-100 p-4 rounded-2xl">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="bg-orange-100 p-4 rounded-2xl mb-4">
                       <Lightbulb className="w-12 h-12 text-orange-600" />
                     </div>
-                    <div className="flex-1">
+                    <div className="w-full">
                       <h2 className="text-2xl font-bold text-gray-800 mb-4">{currentLesson.title}</h2>
                       
                       {/* Render lesson content properly */}
-                      <div className="prose prose-lg max-w-none">
+                      <div className="prose prose-lg max-w-none text-left">
                         {/* Introduction */}
                         {currentLesson.content.introduction && (
                           <p className="text-lg text-gray-700 mb-6 leading-relaxed font-medium">
@@ -365,16 +365,16 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
 
                         {/* Video if available */}
                         {currentLesson.content.videoUrl && (
-                          <div className="my-6 rounded-2xl overflow-hidden shadow-lg">
+                          <div className="my-6 rounded-2xl overflow-hidden shadow-lg aspect-video">
                             <iframe
                               width="100%"
-                              height="400"
+                              height="100%"
                               src={currentLesson.content.videoUrl}
                               title={currentLesson.title}
                               frameBorder="0"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
-                              className="w-full"
+                              className="w-full h-full"
                             ></iframe>
                           </div>
                         )}
@@ -414,45 +414,22 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                                       : 'border-blue-200 bg-gradient-to-br from-blue-50 to-white'
                                   }`}
                                 >
-                                  <div className="flex items-start justify-between mb-4">
-                                    <div className="flex-1">
-                                      <h4 className="text-xl font-bold text-gray-800 mb-2">{example.title}</h4>
-                                      {!isPracticeMode && (
-                                        <p className="text-gray-700">{example.explanation}</p>
-                                      )}
-                                      {isPracticeMode && (() => {
-                                        const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
-                                        return matchingExercise ? (
-                                          <p className="text-gray-700">{matchingExercise.description}</p>
-                                        ) : (
-                                          <p className="text-gray-700">
-                                            Now it's your turn! Try writing similar code with your own values.
-                                          </p>
-                                        );
-                                      })()}
-                                    </div>
-                                    
-                                    {/* Toggle Button */}
-                                    <Button
-                                      size="sm"
-                                      onClick={() => {
-                                        setPracticeMode({ ...practiceMode, [exampleKey]: !isPracticeMode });
-                                        // Reset code when switching modes
-                                        if (!isPracticeMode) {
-                                          // Switching to practice mode - clear the practice code
-                                          const newEdited = { ...editedCode };
-                                          delete newEdited[practiceCodeKey];
-                                          setEditedCode(newEdited);
-                                        }
-                                      }}
-                                      className={`${
-                                        isPracticeMode
-                                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                          : 'bg-green-600 hover:bg-green-700 text-white'
-                                      } shrink-0 ml-4`}
-                                    >
-                                      {isPracticeMode ? '👁️ View Example' : '✏️ Now Try This!'}
-                                    </Button>
+                                  {/* Title and Explanation */}
+                                  <div className="mb-4">
+                                    <h4 className="text-xl font-bold text-gray-800 mb-2">{example.title}</h4>
+                                    {!isPracticeMode && (
+                                      <p className="text-gray-700">{example.explanation}</p>
+                                    )}
+                                    {isPracticeMode && (() => {
+                                      const matchingExercise = currentLesson.content.practiceExercises?.[exampleIndex];
+                                      return matchingExercise ? (
+                                        <p className="text-gray-700">{matchingExercise.description}</p>
+                                      ) : (
+                                        <p className="text-gray-700">
+                                          Now it's your turn! Try writing similar code with your own values.
+                                        </p>
+                                      );
+                                    })()}
                                   </div>
 
                                   {/* Practice Mode - Step-by-step instructions and hints */}
@@ -509,6 +486,30 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                                       </div>
                                     );
                                   })()}
+
+                                  {/* Toggle Button - Now appears above code editor */}
+                                  <div className="mb-4 flex justify-center">
+                                    <Button
+                                      size="lg"
+                                      onClick={() => {
+                                        setPracticeMode({ ...practiceMode, [exampleKey]: !isPracticeMode });
+                                        // Reset code when switching modes
+                                        if (!isPracticeMode) {
+                                          // Switching to practice mode - clear the practice code
+                                          const newEdited = { ...editedCode };
+                                          delete newEdited[practiceCodeKey];
+                                          setEditedCode(newEdited);
+                                        }
+                                      }}
+                                      className={`${
+                                        isPracticeMode
+                                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                          : 'bg-green-600 hover:bg-green-700 text-white'
+                                      } px-8 py-6 text-lg font-bold rounded-2xl shadow-lg`}
+                                    >
+                                      {isPracticeMode ? '👁️ View Example' : '✏️ Now Try This!'}
+                                    </Button>
+                                  </div>
                                   
                                   {/* Code Editor */}
                                   <div className="bg-gray-900 rounded-2xl p-6">
@@ -664,18 +665,19 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
 
             {/* Navigation Buttons */}
             {!isLoading && lessons.length > 0 && (
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                 {/* Previous Lesson Button */}
                 {currentLessonIndex > 0 ? (
                   <Button 
-                    className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
+                    className="bg-gray-600 hover:bg-gray-700 text-white px-6 sm:px-8 py-4 sm:py-6 rounded-2xl text-base sm:text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200"
                     onClick={() => {
                       setCurrentLessonIndex(currentLessonIndex - 1);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   >
-                    <span className="mr-3">←</span>
-                    Previous Lesson
+                    <span className="mr-2 sm:mr-3">←</span>
+                    <span className="hidden sm:inline">Previous Lesson</span>
+                    <span className="sm:hidden">Previous</span>
                   </Button>
                 ) : (
                   <div></div>
@@ -683,7 +685,7 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                 
                 {/* Next Lesson / Go to Challenge Button */}
                 <Button 
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-6 rounded-2xl text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200 ml-auto"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-12 py-4 sm:py-6 rounded-2xl text-base sm:text-xl font-bold shadow-lg transform hover:scale-105 transition-all duration-200 ml-auto"
                   onClick={async () => {
                     // Mark current lesson as completed before moving on
                     if (currentLesson && currentModule) {
@@ -707,12 +709,17 @@ export function ModuleDetailPage({ moduleId, onBack, onChallengeClick, onQuizCli
                     }
                   }}
                 >
-                  <span className="mr-3">{currentLessonIndex < lessons.length - 1 ? '🚀' : '🏆'}</span>
-                  {currentLessonIndex < lessons.length - 1 
-                    ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
-                    : 'Go to Challenge'
-                  }
-                  <span className="ml-3">→</span>
+                  <span className="mr-2 sm:mr-3">{currentLessonIndex < lessons.length - 1 ? '🚀' : '🏆'}</span>
+                  <span className="hidden sm:inline">
+                    {currentLessonIndex < lessons.length - 1 
+                      ? `Next Lesson: ${lessons[currentLessonIndex + 1]?.title}`
+                      : 'Go to Challenge'
+                    }
+                  </span>
+                  <span className="sm:hidden">
+                    {currentLessonIndex < lessons.length - 1 ? 'Next' : 'Challenge'}
+                  </span>
+                  <span className="ml-2 sm:ml-3">→</span>
                 </Button>
               </div>
             )}

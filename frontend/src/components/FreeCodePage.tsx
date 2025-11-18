@@ -44,9 +44,9 @@ print("Hello, World!")`;
       <div className="absolute top-20 left-10 w-16 h-16 bg-blue-200 rounded-full opacity-40 animate-pulse"></div>
       <div className="absolute top-32 right-20 w-12 h-12 bg-blue-300 rounded-full opacity-50 animate-bounce" style={{animationDelay: '1s'}}></div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div className="flex items-center">
             <Button 
               onClick={onBack}
@@ -57,13 +57,13 @@ print("Hello, World!")`;
             </Button>
           </div>
           
-          <div className="flex items-center absolute left-1/2 transform -translate-x-1/2">
-            <h1 className="text-blue-600 text-3xl font-bold tracking-wide">
+          <div className="flex items-center justify-center md:absolute md:left-1/2 md:transform md:-translate-x-1/2">
+            <h1 className="text-blue-600 text-2xl md:text-3xl font-bold tracking-wide">
               LeetCode for Kids
             </h1>
           </div>
           
-          <div className="flex items-center space-x-4 invisible">
+          <div className="hidden md:flex items-center space-x-4 invisible">
             <div className="bg-blue-600 p-3 rounded-xl">
               <Code className="w-8 h-8 text-white" />
             </div>
@@ -71,7 +71,7 @@ print("Hello, World!")`;
         </div>
 
         {/* Main Content */}
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           <div className="flex-1">
             {/* Title Section */}
             <div className="flex items-center space-x-6 mb-8">
